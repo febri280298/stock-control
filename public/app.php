@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Control Stock — Inventory System</title>
+  <title>Control Stock — New Project</title>
+  <link rel="icon" type="image/png" href="bti.png">
 
   <!-- Tabler CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler/1.0.0-beta20/css/tabler.min.css">
@@ -46,58 +47,6 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; font-family: var(--font); background: var(--surface2); color: var(--text); transition: background 0.3s, color 0.3s; }
 
-    /* ===== LOGIN ===== */
-    .login-wrap {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--surface2);
-      padding: 20px;
-    }
-    .login-card {
-      background: var(--surface);
-      border-radius: 20px;
-      padding: 40px 36px;
-      width: 100%;
-      max-width: 420px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.12);
-      border: 1px solid var(--border);
-    }
-    .login-brand { text-align: center; margin-bottom: 32px; }
-    .login-brand img { width: 110px; margin-bottom: 12px; display: block; margin-left: auto; margin-right: auto; }
-    .login-brand h1 { font-size: 22px; font-weight: 800; color: var(--text); }
-    .login-brand p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
-    .form-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; display: block; }
-    .form-ctrl {
-      width: 100%;
-      padding: 11px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      background: var(--surface2);
-      color: var(--text);
-      font-size: 14px;
-      font-family: var(--font);
-      transition: border 0.2s, box-shadow 0.2s;
-      -webkit-appearance: none;
-    }
-    .form-ctrl:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(95,111,255,0.15); }
-    .btn-primary-full {
-      width: 100%;
-      padding: 12px;
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-family: var(--font);
-    }
-    .btn-primary-full:hover { background: var(--primary-dark); transform: translateY(-1px); }
-    .btn-primary-full:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
     /* ===== LAYOUT ===== */
     .app-layout { display: flex; min-height: 100vh; }
 
@@ -112,10 +61,7 @@
       display: flex; flex-direction: column;
       transition: transform 0.3s;
     }
-    .sidebar-brand {
-      padding: 20px 20px 16px;
-      border-bottom: 1px solid var(--border);
-    }
+    .sidebar-brand { padding: 20px 20px 16px; border-bottom: 1px solid var(--border); }
     .sidebar-brand img { width: 100px; display: block; }
     .sidebar-brand small { font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block; }
     .nav-section { padding: 16px 12px 0; }
@@ -134,7 +80,7 @@
     }
     .nav-link:hover { background: var(--surface2); color: var(--text); }
     .nav-link.active { background: rgba(95,111,255,0.1); color: var(--primary); font-weight: 700; }
-    .nav-link .ti { font-size: 18px; }
+    .nav-link i { font-size: 18px; line-height: 1; }
     .sidebar-footer { margin-top: auto; padding: 16px 12px; border-top: 1px solid var(--border); }
 
     /* ===== MAIN ===== */
@@ -174,6 +120,7 @@
       transition: all 0.2s;
     }
     .icon-btn:hover { background: var(--surface); color: var(--primary); }
+    .icon-btn i { font-size: 17px; line-height: 1; }
     .role-badge {
       background: rgba(95,111,255,0.1);
       color: var(--primary);
@@ -183,8 +130,9 @@
       border-radius: 6px;
       text-transform: uppercase;
     }
+    .greeting { font-size: 12px; color: var(--text-muted); }
 
-    /* ===== PAGE CONTENT ===== */
+    /* ===== PAGE ===== */
     .page { padding: 20px; }
 
     /* ===== STAT CARDS ===== */
@@ -196,13 +144,13 @@
       padding: 16px;
       display: flex; align-items: center; gap: 14px;
     }
-    .stat-icon { line-height: 1;
+    .stat-icon {
       width: 44px; height: 44px;
       border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
-      
-      flex-shrink: 0; font-size: 22px;
+      flex-shrink: 0; line-height: 1; font-size: 22px;
     }
+    .stat-icon i { font-size: 22px; line-height: 1; }
     .stat-icon.blue { background: rgba(95,111,255,0.12); color: var(--primary); }
     .stat-icon.green { background: rgba(47,179,68,0.12); color: var(--success); }
     .stat-icon.orange { background: rgba(247,103,7,0.12); color: var(--warning); }
@@ -213,30 +161,17 @@
     .stat-body .value { font-size: 26px; font-weight: 800; color: var(--text); line-height: 1.2; }
 
     /* ===== CARD ===== */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      margin-bottom: 16px;
-    }
-    .card-header {
-      padding: 14px 18px;
-      border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-    }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; }
+    .card-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
     .card-title { font-size: 14px; font-weight: 700; color: var(--text); }
+    .card-title i { font-size: 15px; }
     .card-body { padding: 16px 18px; }
 
     /* ===== CHART ===== */
     .chart-wrap { position: relative; height: 220px; }
 
-    /* ===== ALERT ITEMS ===== */
-    .alert-strip {
-      border-radius: 9px;
-      padding: 12px 14px;
-      margin-bottom: 8px;
-      display: flex; justify-content: space-between; align-items: center;
-    }
+    /* ===== ALERT STRIP ===== */
+    .alert-strip { border-radius: 9px; padding: 12px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
     .alert-strip.warning { background: rgba(247,103,7,0.08); border-left: 3px solid var(--warning); }
     .alert-strip.danger { background: rgba(214,57,57,0.08); border-left: 3px solid var(--danger); }
     .alert-strip .pn { font-size: 13px; font-weight: 700; }
@@ -245,26 +180,30 @@
 
     /* ===== FORMS ===== */
     .form-group { margin-bottom: 14px; }
-    .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; display: block; }
+    .form-ctrl {
+      width: 100%; padding: 11px 14px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      background: var(--surface2); color: var(--text);
+      font-size: 14px; font-family: var(--font);
+      transition: border 0.2s, box-shadow 0.2s; -webkit-appearance: none;
+    }
+    .form-ctrl:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(95,111,255,0.15); }
     .form-ctrl[disabled] { opacity: 0.6; cursor: not-allowed; }
+    .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-section-bar { height: 5px; border-radius: 3px; margin-bottom: 14px; }
+    .bar-green { background: linear-gradient(90deg, var(--success), #27a03b); }
+    .bar-red { background: linear-gradient(90deg, var(--danger), #b02e2e); }
+
+    /* ===== SUGGEST ===== */
     .suggest-wrap { position: relative; }
     .suggestions {
       position: absolute; top: calc(100% + 4px); left: 0; right: 0;
-      background: var(--surface);
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      max-height: 160px;
-      overflow-y: auto;
-      z-index: 200;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 10px; max-height: 160px; overflow-y: auto;
+      z-index: 200; box-shadow: 0 8px 24px rgba(0,0,0,0.1);
     }
-    .suggest-item {
-      padding: 10px 14px;
-      font-size: 13px;
-      cursor: pointer;
-      border-bottom: 1px solid var(--border);
-      transition: background 0.15s;
-    }
+    .suggest-item { padding: 10px 14px; font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.15s; }
     .suggest-item:last-child { border-bottom: none; }
     .suggest-item:hover { background: var(--surface2); color: var(--primary); }
     .suggest-item .pn { font-weight: 700; }
@@ -282,9 +221,11 @@
     .badge-danger { background: rgba(214,57,57,0.12); color: var(--danger); }
     .badge-masuk { background: rgba(47,179,68,0.12); color: var(--success); }
     .badge-keluar { background: rgba(214,57,57,0.12); color: var(--danger); }
+    .model-tag { background: rgba(95,111,255,0.1); color: var(--primary); padding: 2px 7px; border-radius: 5px; font-size: 10px; font-weight: 700; }
 
     /* ===== BUTTONS ===== */
     .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; border: none; transition: all 0.2s; font-family: var(--font); }
+    .btn i { font-size: 14px; }
     .btn-primary { background: var(--primary); color: #fff; }
     .btn-primary:hover { background: var(--primary-dark); }
     .btn-success { background: var(--success); color: #fff; }
@@ -296,6 +237,17 @@
     .btn-full { width: 100%; justify-content: center; padding: 11px; }
     .btn:disabled { opacity: 0.55; cursor: not-allowed; }
     .btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 6px; }
+    .btn-wa { background: #25d366; color: #fff; }
+    .btn-wa:hover { background: #1da851; transform: scale(1.05); }
+    .btn-wa:active { transform: scale(0.97); }
+    .btn-pdf { background: var(--danger); color: #fff; }
+    .btn-pdf:hover { background: #b32d2d; transform: scale(1.05); }
+    .btn-pdf:active { transform: scale(0.97); }
+
+    /* ===== FILTER ROW ===== */
+    .filter-row { display: flex; gap: 10px; margin-bottom: 14px; }
+    .filter-row .form-ctrl { flex: 1; }
+    .filter-row select.form-ctrl { max-width: 140px; }
 
     /* ===== MOBILE NAV ===== */
     .mobile-nav {
@@ -313,9 +265,9 @@
       gap: 3px; cursor: pointer; color: var(--text-muted); font-size: 10px; font-weight: 600;
       transition: color 0.2s; padding: 8px 4px;
     }
-    .nav-tab .ti { font-size: 22px; }
+    .nav-tab i { font-size: 22px; line-height: 1; }
     .nav-tab.active { color: var(--primary); }
-    .nav-tab.active .ti { transform: translateY(-1px); }
+    .nav-tab.active i { transform: translateY(-1px); }
 
     /* ===== TOAST ===== */
     .toast-wrap {
@@ -324,41 +276,20 @@
       pointer-events: none;
     }
     .toast {
-      padding: 12px 16px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 600;
+      padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
       display: flex; align-items: center; gap: 8px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-      animation: toastIn 0.3s ease;
-      pointer-events: all;
+      animation: toastIn 0.3s ease; pointer-events: all;
     }
+    .toast i { font-size: 16px; }
     .toast-success { background: var(--success); color: #fff; }
     .toast-error { background: var(--danger); color: #fff; }
     @keyframes toastIn { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
 
-    /* ===== FILTER ROW ===== */
-    .filter-row { display: flex; gap: 10px; margin-bottom: 14px; }
-    .filter-row .form-ctrl { flex: 1; }
-    .filter-row select.form-ctrl { max-width: 140px; }
-
-    /* ===== FORM SECTION HEADER ===== */
-    .form-section-bar {
-      height: 5px;
-      border-radius: 3px;
-      margin-bottom: 14px;
-    }
-    .bar-green { background: linear-gradient(90deg, var(--success), #27a03b); }
-    .bar-red { background: linear-gradient(90deg, var(--danger), #b02e2e); }
-
-    /* ===== GREETING ===== */
-    .greeting { font-size: 12px; color: var(--text-muted); }
-
-    /* ===== MODEL BADGE ===== */
-    .model-tag { background: rgba(95,111,255,0.1); color: var(--primary); padding: 2px 7px; border-radius: 5px; font-size: 10px; font-weight: 700; }
-
-    /* ===== EMPTY STATE ===== */
-    .empty { text-align: center; padding: 40px; color: var(--text-muted); font-size: 13px; }
+    /* ===== ICON FIX ===== */
+    .ti { font-family: "tabler-icons" !important; font-style: normal; font-weight: normal; speak: none;
+      display: inline-block; text-decoration: inherit; width: 1em; text-align: center;
+      font-variant: normal; text-transform: none; line-height: 1em; }
 
     /* ===== RESPONSIVE ===== */
     @media (max-width: 768px) {
@@ -373,80 +304,43 @@
       .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
       .stat-card { padding: 10px; gap: 8px; }
       .stat-body .value { font-size: 20px; }
-      .stat-icon { line-height: 1; width: 36px; height: 36px; }
+      .stat-icon { width: 36px; height: 36px; }
       .stat-icon i { font-size: 18px; }
-      .stat-body .label { font-size: 10px; }
       .input-row { grid-template-columns: 1fr; gap: 10px; }
       .input-forms-grid { grid-template-columns: 1fr !important; }
       .chart-wrap { height: 180px; }
       .datetime-pill .date { display: none; }
-      .datetime-pill { padding: 4px 8px; }
-      .datetime-pill .time { font-size: 11px; }
-
-      /* TABLE MOBILE FIX */
-      .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: calc(100vw - 20px); }
+      .table-wrap { max-width: calc(100vw - 20px); }
       table { font-size: 11px; min-width: 480px; }
       th { padding: 8px 6px; font-size: 9px; }
       td { padding: 8px 6px; }
-      /* Sembunyiin kolom yang tidak penting di mobile - history */
       .hide-mobile { display: none !important; }
-      /* Clamp panjang text di cell */
       td.td-name { max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       td.td-date { white-space: nowrap; font-size: 10px; }
-
-      /* CARD */
       .card-header { padding: 12px 14px; }
       .card-body { padding: 12px 14px; }
-      .card-title { font-size: 13px; }
-
-      /* FILTER ROW */
       .filter-row { flex-wrap: wrap; gap: 8px; }
-      .filter-row .form-ctrl { min-width: 0; font-size: 12px; }
       .filter-row select.form-ctrl { max-width: 110px; }
-
-      /* ALERT STRIP */
-      .alert-strip { padding: 10px 12px; }
     }
     @media (min-width: 769px) {
       .mobile-nav { display: none !important; }
     }
 
-    /* ===== SCROLLBAR ===== */
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-
-    /* ===== ICON FIX ===== */
-    .ti { font-family: "tabler-icons" !important; font-style: normal; font-weight: normal; speak: none;
-      display: inline-block; text-decoration: inherit; width: 1em; text-align: center;
-      font-variant: normal; text-transform: none; line-height: 1em; }
-    .stat-icon .ti { font-size: 22px; }
-    .icon-btn .ti { font-size: 17px; }
-    .nav-link .ti { font-size: 17px; }
-    .nav-tab .ti { font-size: 22px; }
-    .card-title .ti { font-size: 15px; }
-    .toast .ti { font-size: 16px; }
-    .btn .ti { font-size: 14px; }
-
-
-    /* ===== WA SHARE BUTTON ===== */
-    .btn-wa { background: #25d366; color: #fff; }
-    .btn-wa:hover { background: #1da851; transform: scale(1.05); }
-    .btn-wa:active { transform: scale(0.97); }
-    /* ===== NO DATA ===== */
     td.no-data { text-align: center; color: var(--text-muted); padding: 32px; }
   </style>
 </head>
 <body>
 
-<!-- API CONFIG -->
 <script>
   const API_URL = 'https://daylistockproject.bonecomtricom.net/api';
 </script>
 
 <div id="app">
 
-  <!-- ====== TOAST ====== -->
+  <!-- TOAST -->
   <div class="toast-wrap" v-if="toast.show">
     <div class="toast" :class="'toast-' + toast.type">
       <i :class="toast.type === 'success' ? 'ti ti-circle-check' : 'ti ti-alert-circle'"></i>
@@ -454,36 +348,9 @@
     </div>
   </div>
 
-  <!-- ====== LOGIN ====== -->
-  <div class="login-wrap" v-if="!isLoggedIn">
-    <div class="login-card">
-      <div class="login-brand">
-        <img src="bti.png" alt="Logo" onerror="this.style.display='none'">
-        <h1>Control Stock</h1>
-        <p>Sistem Manajemen Inventory Part & Material New Project</p>
-      </div>
-      <div v-if="loginError" style="background:rgba(214,57,57,0.1);color:var(--danger);padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;border:1px solid rgba(214,57,57,0.2);">
-        <i class="ti ti-alert-circle"></i> {{ loginError }}
-      </div>
-      <div class="form-group">
-        <label class="form-label">Username</label>
-        <input class="form-ctrl" type="text" v-model="loginForm.username" placeholder="Masukkan username" @keyup.enter="login">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Password</label>
-        <input class="form-ctrl" type="password" v-model="loginForm.password" placeholder="Masukkan password" @keyup.enter="login">
-      </div>
-      <button class="btn-primary-full" @click="login" :disabled="loginLoading">
-        <span v-if="loginLoading">Masuk...</span>
-        <span v-else>Masuk <i class="ti ti-arrow-right"></i></span>
-      </button>
-    </div>
-  </div>
+  <div class="app-layout">
 
-  <!-- ====== MAIN APP ====== -->
-  <div class="app-layout" v-if="isLoggedIn">
-
-    <!-- SIDEBAR (desktop) -->
+    <!-- SIDEBAR -->
     <nav class="sidebar">
       <div class="sidebar-brand">
         <img src="bti.png" alt="Logo" onerror="this.style.display='none'">
@@ -520,7 +387,7 @@
       </div>
     </nav>
 
-    <!-- MAIN CONTENT -->
+    <!-- MAIN -->
     <div class="main">
 
       <!-- TOPBAR -->
@@ -544,36 +411,17 @@
         </div>
       </div>
 
-      <!-- ====== DASHBOARD PAGE ====== -->
+      <!-- DASHBOARD -->
       <div class="page" v-if="page==='dashboard'">
         <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon blue"><i class="ti ti-box"></i></div>
-            <div class="stat-body"><div class="label">Total Part</div><div class="value">{{ partsList.length }}</div></div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon green"><i class="ti ti-circle-check"></i></div>
-            <div class="stat-body"><div class="label">Stok OK</div><div class="value">{{ statOk }}</div></div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon orange"><i class="ti ti-alert-triangle"></i></div>
-            <div class="stat-body"><div class="label">Kritis</div><div class="value">{{ statCrit }}</div></div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon red"><i class="ti ti-alert-circle"></i></div>
-            <div class="stat-body"><div class="label">Habis</div><div class="value">{{ statEmpty }}</div></div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon cyan"><i class="ti ti-clock"></i></div>
-            <div class="stat-body"><div class="label">Before QC</div><div class="value">{{ statBeforeQC }}</div></div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon purple"><i class="ti ti-check"></i></div>
-            <div class="stat-body"><div class="label">After QC</div><div class="value">{{ statAfterQC }}</div></div>
-          </div>
+          <div class="stat-card"><div class="stat-icon blue"><i class="ti ti-box"></i></div><div class="stat-body"><div class="label">Total Part</div><div class="value">{{ partsList.length }}</div></div></div>
+          <div class="stat-card"><div class="stat-icon green"><i class="ti ti-circle-check"></i></div><div class="stat-body"><div class="label">Stok OK</div><div class="value">{{ statOk }}</div></div></div>
+          <div class="stat-card"><div class="stat-icon orange"><i class="ti ti-alert-triangle"></i></div><div class="stat-body"><div class="label">Kritis</div><div class="value">{{ statCrit }}</div></div></div>
+          <div class="stat-card"><div class="stat-icon red"><i class="ti ti-alert-circle"></i></div><div class="stat-body"><div class="label">Habis</div><div class="value">{{ statEmpty }}</div></div></div>
+          <div class="stat-card"><div class="stat-icon cyan"><i class="ti ti-clock"></i></div><div class="stat-body"><div class="label">Before QC</div><div class="value">{{ statBeforeQC }}</div></div></div>
+          <div class="stat-card"><div class="stat-icon purple"><i class="ti ti-check"></i></div><div class="stat-body"><div class="label">After QC</div><div class="value">{{ statAfterQC }}</div></div></div>
+          <div class="stat-card"><div class="stat-icon red"><i class="ti ti-x"></i></div><div class="stat-body"><div class="label">Total Reject</div><div class="value">{{ statTotalReject }}</div></div></div>
         </div>
-
-        <!-- Chart -->
         <div class="card">
           <div class="card-header">
             <span class="card-title"><i class="ti ti-chart-bar" style="color:var(--primary);margin-right:6px;"></i>Grafik Stok 7 Hari Terakhir</span>
@@ -582,55 +430,33 @@
               <span style="color:var(--danger);"><span style="display:inline-block;width:10px;height:10px;background:var(--danger);border-radius:2px;margin-right:4px;"></span>Keluar</span>
             </div>
           </div>
-          <div class="card-body">
-            <div class="chart-wrap">
-              <canvas id="myChart"></canvas>
-            </div>
-          </div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="myChart"></canvas></div></div>
         </div>
-
-        <!-- Kritis Alert -->
-        <div class="card" v-if="kritisItems.length > 0" style="border-left: 3px solid var(--warning);">
-          <div class="card-header">
-            <span class="card-title" style="color:var(--warning);"><i class="ti ti-alert-triangle"></i> Stok Kritis — Perlu Restock</span>
-          </div>
+        <div class="card" v-if="kritisItems.length > 0" style="border-left:3px solid var(--warning);">
+          <div class="card-header"><span class="card-title" style="color:var(--warning);"><i class="ti ti-alert-triangle"></i> Stok Kritis — Perlu Restock</span></div>
           <div class="card-body" style="padding-bottom:8px;">
             <div class="alert-strip warning" v-for="p in kritisItems" :key="p.id">
-              <div>
-                <div class="pn">{{ p.part_number }}</div>
-                <div class="name">{{ p.part_name }} <span class="model-tag" v-if="p.model">{{ p.model }}</span></div>
-              </div>
+              <div><div class="pn">{{ p.part_number }}</div><div class="name">{{ p.part_name }} <span class="model-tag" v-if="p.model">{{ p.model }}</span></div></div>
               <div class="stok" style="color:var(--warning);">{{ p.stock }}/{{ p.min_stock }}</div>
             </div>
           </div>
         </div>
-
-        <!-- Habis Alert -->
-        <div class="card" v-if="habisItems.length > 0" style="border-left: 3px solid var(--danger);">
-          <div class="card-header">
-            <span class="card-title" style="color:var(--danger);"><i class="ti ti-alert-circle"></i> Stok Habis — Urgent!</span>
-          </div>
+        <div class="card" v-if="habisItems.length > 0" style="border-left:3px solid var(--danger);">
+          <div class="card-header"><span class="card-title" style="color:var(--danger);"><i class="ti ti-alert-circle"></i> Stok Habis — Urgent!</span></div>
           <div class="card-body" style="padding-bottom:8px;">
             <div class="alert-strip danger" v-for="p in habisItems" :key="p.id">
-              <div>
-                <div class="pn">{{ p.part_number }}</div>
-                <div class="name">{{ p.part_name }} <span class="model-tag" v-if="p.model">{{ p.model }}</span></div>
-              </div>
+              <div><div class="pn">{{ p.part_number }}</div><div class="name">{{ p.part_name }} <span class="model-tag" v-if="p.model">{{ p.model }}</span></div></div>
               <div class="stok" style="color:var(--danger);">HABIS</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ====== INPUT PAGE ====== -->
+      <!-- INPUT -->
       <div class="page" v-if="page==='input'">
         <div class="input-forms-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-
-          <!-- Masuk -->
           <div class="card">
-            <div class="card-header">
-              <span class="card-title" style="color:var(--success);"><i class="ti ti-arrow-down-circle"></i> Input Masuk</span>
-            </div>
+            <div class="card-header"><span class="card-title" style="color:var(--success);"><i class="ti ti-arrow-down-circle"></i> Input Masuk</span></div>
             <div class="card-body">
               <div class="form-section-bar bar-green"></div>
               <div class="form-group suggest-wrap">
@@ -638,8 +464,7 @@
                 <input class="form-ctrl" type="text" v-model="masuk.pn" @input="searchSuggest('masuk')" placeholder="Ketik PN..." autocomplete="off">
                 <div class="suggestions" v-if="suggests.masuk.length">
                   <div class="suggest-item" v-for="s in suggests.masuk" :key="s.part_number" @click="selectPart('masuk', s)">
-                    <div class="pn">{{ s.part_number }}</div>
-                    <div class="nm">{{ s.part_name }}</div>
+                    <div class="pn">{{ s.part_number }}</div><div class="nm">{{ s.part_name }}</div>
                   </div>
                 </div>
               </div>
@@ -659,19 +484,14 @@
                 </select>
               </div>
               <div class="form-group"><label class="form-label">Keterangan</label><input class="form-ctrl" type="text" v-model="masuk.keterangan" placeholder="Optional"></div>
-              <div class="form-group"><label class="form-label">Supplier</label><input class="form-ctrl" type="text" v-model="masuk.supplier" placeholder="Optional"></div>
+              <div class="form-group"><label class="form-label">Supplier</label><input class="form-ctrl" :value="masuk.supplier" disabled placeholder="Auto"></div>
               <button class="btn btn-success btn-full" @click="submitMasuk" :disabled="loadingMasuk">
-                <i class="ti ti-device-floppy"></i>
-                {{ loadingMasuk ? 'Menyimpan...' : 'Simpan Masuk' }}
+                <i class="ti ti-device-floppy"></i> {{ loadingMasuk ? 'Menyimpan...' : 'Simpan Masuk' }}
               </button>
             </div>
           </div>
-
-          <!-- Keluar -->
           <div class="card">
-            <div class="card-header">
-              <span class="card-title" style="color:var(--danger);"><i class="ti ti-arrow-up-circle"></i> Input Keluar</span>
-            </div>
+            <div class="card-header"><span class="card-title" style="color:var(--danger);"><i class="ti ti-arrow-up-circle"></i> Input Keluar</span></div>
             <div class="card-body">
               <div class="form-section-bar bar-red"></div>
               <div class="form-group suggest-wrap">
@@ -679,8 +499,7 @@
                 <input class="form-ctrl" type="text" v-model="keluar.pn" @input="searchSuggest('keluar')" placeholder="Ketik PN..." autocomplete="off">
                 <div class="suggestions" v-if="suggests.keluar.length">
                   <div class="suggest-item" v-for="s in suggests.keluar" :key="s.part_number" @click="selectPart('keluar', s)">
-                    <div class="pn">{{ s.part_number }}</div>
-                    <div class="nm">{{ s.part_name }}</div>
+                    <div class="pn">{{ s.part_number }}</div><div class="nm">{{ s.part_name }}</div>
                   </div>
                 </div>
               </div>
@@ -702,22 +521,17 @@
               <div class="form-group"><label class="form-label">Keterangan</label><input class="form-ctrl" type="text" v-model="keluar.keterangan" placeholder="Optional"></div>
               <div class="form-group"><label class="form-label">Tujuan</label><input class="form-ctrl" type="text" v-model="keluar.tujuan" placeholder="Optional"></div>
               <button class="btn btn-full" @click="submitKeluar" :disabled="loadingKeluar" style="background:var(--danger);color:#fff;">
-                <i class="ti ti-device-floppy"></i>
-                {{ loadingKeluar ? 'Menyimpan...' : 'Simpan Keluar' }}
+                <i class="ti ti-device-floppy"></i> {{ loadingKeluar ? 'Menyimpan...' : 'Simpan Keluar' }}
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ====== PART LIST PAGE ====== -->
+      <!-- PART LIST -->
       <div class="page" v-if="page==='partlist'">
-
-        <!-- Form tambah part (admin only) -->
         <div class="card" v-if="isAdmin" style="border-left:3px solid var(--primary);">
-          <div class="card-header">
-            <span class="card-title"><i class="ti ti-plus-circle" style="color:var(--primary);"></i> Tambah Part Baru</span>
-          </div>
+          <div class="card-header"><span class="card-title"><i class="ti ti-circle-plus" style="color:var(--primary);"></i> Tambah Part Baru</span></div>
           <div class="card-body">
             <div class="input-row">
               <div class="form-group"><label class="form-label">Model</label><input class="form-ctrl" type="text" v-model="newPart.model" placeholder="Contoh: 737D"></div>
@@ -725,23 +539,26 @@
             </div>
             <div class="form-group"><label class="form-label">Part Name *</label><input class="form-ctrl" type="text" v-model="newPart.part_name" placeholder="Nama part lengkap"></div>
             <div class="form-group"><label class="form-label">Part Number *</label><input class="form-ctrl" type="text" v-model="newPart.part_number" placeholder="Contoh: 71173-X7V30"></div>
+            <div class="form-group"><label class="form-label">Supplier</label><input class="form-ctrl" type="text" v-model="newPart.supplier" placeholder="Contoh: PT MAJU MUNDUR"></div>
             <div class="input-row">
               <div class="form-group"><label class="form-label">Stok Awal</label><input class="form-ctrl" type="number" v-model="newPart.stock" min="0"></div>
               <div class="form-group"><label class="form-label">Minimal Stok</label><input class="form-ctrl" type="number" v-model="newPart.min_stock" min="1"></div>
             </div>
             <button class="btn btn-primary" @click="submitTambahPart" :disabled="loadingNewPart">
-              <i class="ti ti-device-floppy"></i>
-              {{ loadingNewPart ? 'Menyimpan...' : 'Simpan Part' }}
+              <i class="ti ti-device-floppy"></i> {{ loadingNewPart ? 'Menyimpan...' : 'Simpan Part' }}
             </button>
           </div>
         </div>
-
         <div class="card">
           <div class="card-header">
             <span class="card-title"><i class="ti ti-box"></i> Daftar Part</span>
-            <button class="btn btn-success btn-sm" @click="exportExcelStok">
-              <i class="ti ti-file-spreadsheet"></i> Export Excel
-            </button>
+            <div style="display:flex;gap:8px;">
+              <input type="file" ref="importFileInput" accept=".xlsx,.xls,.csv" style="display:none" @change="handleImportFile">
+              <button class="btn btn-outline btn-sm" @click="importFileInput.click()" :disabled="loadingImport">
+                <i class="ti ti-upload"></i> {{ loadingImport ? 'Mengimport...' : 'Import Excel' }}
+              </button>
+              <button class="btn btn-success btn-sm" @click="exportExcelStok"><i class="ti ti-file-spreadsheet"></i> Export Excel</button>
+            </div>
           </div>
           <div class="card-body" style="padding-bottom:8px;">
             <div class="filter-row">
@@ -756,20 +573,14 @@
             <table>
               <thead>
                 <tr>
-                  <th class="hide-mobile">Commodity</th>
-                  <th>Part Name</th>
-                  <th>PN</th>
-                  <th class="hide-mobile">Model</th>
-                  <th>Stok</th>
-                  <th class="hide-mobile">Min</th>
-                  <th>Status</th>
-                  <th v-if="isAdmin" class="hide-mobile">Aksi</th>
+                  <th class="hide-mobile">Commodity</th><th>Part Name</th><th>PN</th>
+                  <th class="hide-mobile">Model</th><th>Stok</th><th class="hide-mobile">Min</th>
+                  <th class="hide-mobile">Reject</th>
+                  <th>Status</th><th v-if="isAdmin" class="hide-mobile">Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-if="filteredParts.length === 0">
-                  <td :colspan="isAdmin ? 8 : 7" class="no-data">Tidak ada data</td>
-                </tr>
+                <tr v-if="filteredParts.length === 0"><td :colspan="isAdmin ? 9 : 8" class="no-data">Tidak ada data</td></tr>
                 <tr v-for="p in filteredParts" :key="p.id">
                   <td class="hide-mobile td-name">{{ p.commodity }}</td>
                   <td class="td-name">{{ p.part_name }}</td>
@@ -777,16 +588,9 @@
                   <td class="hide-mobile"><span class="model-tag" v-if="p.model">{{ p.model }}</span><span v-else>-</span></td>
                   <td style="font-weight:800;text-align:center;">{{ p.stock }}</td>
                   <td class="hide-mobile">{{ p.min_stock }}</td>
-                  <td>
-                    <span class="badge" :class="p.stock === 0 ? 'badge-danger' : p.stock <= p.min_stock ? 'badge-warning' : 'badge-ok'">
-                      {{ p.stock === 0 ? 'HABIS' : p.stock <= p.min_stock ? 'KRITIS' : 'OK' }}
-                    </span>
-                  </td>
-                  <td v-if="isAdmin" class="hide-mobile">
-                    <button class="btn btn-danger-soft btn-sm" @click="deletePart(p.id)">
-                      <i class="ti ti-trash"></i>
-                    </button>
-                  </td>
+                  <td class="hide-mobile" style="text-align:center;color:var(--danger);font-weight:700;">{{ p.total_reject || 0 }}</td>
+                  <td><span class="badge" :class="p.stock === 0 ? 'badge-danger' : p.stock <= p.min_stock ? 'badge-warning' : 'badge-ok'">{{ p.stock === 0 ? 'HABIS' : p.stock <= p.min_stock ? 'KRITIS' : 'OK' }}</span></td>
+                  <td v-if="isAdmin" class="hide-mobile"><button class="btn btn-danger-soft btn-sm" @click="deletePart(p.id)"><i class="ti ti-trash"></i></button></td>
                 </tr>
               </tbody>
             </table>
@@ -794,43 +598,75 @@
         </div>
       </div>
 
-      <!-- ====== HISTORY PAGE ====== -->
+      <!-- HISTORY -->
       <div class="page" v-if="page==='history'">
         <div class="card">
-          <div class="card-header">
-            <span class="card-title"><i class="ti ti-history"></i> History Transaksi</span>
-          </div>
+          <div class="card-header"><span class="card-title"><i class="ti ti-history"></i> History Transaksi</span></div>
           <div class="card-body" style="padding-bottom:8px;">
             <div class="filter-row">
               <select class="form-ctrl" v-model="historyFilter.type" @change="loadHistory" style="max-width:130px;">
-                <option value="">Semua Tipe</option>
-                <option value="masuk">Masuk</option>
-                <option value="keluar">Keluar</option>
+                <option value="">Semua Tipe</option><option value="masuk">Masuk</option><option value="keluar">Keluar</option>
               </select>
               <input class="form-ctrl" type="text" v-model="historyFilter.search" @input="loadHistory" placeholder="Cari PN / nama...">
+              <button class="btn btn-primary" style="white-space:nowrap;" @click="openSJModal" :disabled="selectedIds.length===0">
+                <i class="ti ti-file-type-pdf"></i> Surat Jalan ({{ selectedIds.length }})
+              </button>
             </div>
+
+            <!-- MODAL SURAT JALAN -->
+            <div v-if="sjModal.show" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:center;justify-content:center;">
+              <div class="card" style="width:360px;margin:0;">
+                <div class="card-header"><span class="card-title">Detail Surat Jalan</span></div>
+                <div class="card-body">
+                  <label style="font-size:12px;font-weight:600;">Delivery To</label>
+                  <input class="form-ctrl" style="margin:6px 0 12px;" v-model="sjModal.delivery_to" placeholder="Nama tujuan / customer">
+                  <label style="font-size:12px;font-weight:600;">Tanggal</label>
+                  <input class="form-ctrl" style="margin:6px 0 16px;" type="date" v-model="sjModal.date">
+                  <div style="display:flex;gap:8px;">
+                    <button class="btn" style="flex:1;background:var(--surface2);color:var(--text);" @click="sjModal.show=false">Batal</button>
+                    <button class="btn btn-primary" style="flex:1;" @click="submitSJModal" :disabled="sjModal.loading">
+                      {{ sjModal.loading ? 'Membuat...' : 'Download' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- MODAL APPROVE QC -->
+<div v-if="qcModal.show" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:center;justify-content:center;">
+  <div class="card" style="width:360px;margin:0;">
+    <div class="card-header"><span class="card-title">Approve QC</span></div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">
+        PN: <b>{{ qcModal.part_number }}</b> — Qty Masuk: <b>{{ qcModal.maxQty }}</b>
+      </p>
+      <label style="font-size:12px;font-weight:600;">Qty OK (lolos QC)</label>
+      <input class="form-ctrl" style="margin:6px 0 12px;" type="number" v-model="qcModal.qty_ok" :max="qcModal.maxQty" min="0">
+      <label style="font-size:12px;font-weight:600;">Keterangan Reject (opsional)</label>
+      <input class="form-ctrl" style="margin:6px 0 16px;" type="text" v-model="qcModal.keterangan_reject" placeholder="Alasan reject, kalau ada">
+      <div style="display:flex;gap:8px;">
+        <button class="btn" style="flex:1;background:var(--surface2);color:var(--text);" @click="qcModal.show=false">Batal</button>
+        <button class="btn btn-primary" style="flex:1;" @click="submitQcModal" :disabled="qcModal.loading">
+          {{ qcModal.loading ? 'Menyimpan...' : 'Approve' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
           </div>
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>Tanggal</th>
-                  <th>Tipe</th>
-                  <th>PN</th>
-                  <th>Part Name</th>
-                  <th>Qty</th>
-                  <th class="hide-mobile">QC</th>
-                  <th class="hide-mobile">Ket</th>
-                  <th class="hide-mobile">Oleh</th>
-                  <th v-if="isAdmin" class="hide-mobile">Aksi</th>
-                  <th>Share</th>
+                  <th><input type="checkbox" @change="toggleSelectAll($event)" :checked="allSelected"></th>
+                  <th>Tanggal</th><th>Tipe</th><th>PN</th><th>Part Name</th><th>Qty</th>
+                  <th class="hide-mobile">QC</th><th class="hide-mobile">Supplier/Customer</th><th class="hide-mobile">Oleh</th>
+                  <th v-if="isAdmin" class="hide-mobile">Aksi</th><th>QC</th><th>Share</th><th>PDF</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-if="historyList.length === 0">
-                  <td :colspan="isAdmin ? 9 : 8" class="no-data">Tidak ada data</td>
-                </tr>
+                <tr v-if="historyList.length === 0"><td :colspan="isAdmin ? 12 : 11" class="no-data">Tidak ada data</td></tr>
                 <tr v-for="h in historyList" :key="h.id">
+                  <td><input type="checkbox" :value="h.id" v-model="selectedIds"></td>
                   <td class="td-date">{{ h.date }}<br><span style="color:var(--text-muted);font-size:10px;">{{ h.time || '' }}</span></td>
                   <td><span class="badge" :class="h.type === 'masuk' ? 'badge-masuk' : 'badge-keluar'">{{ h.type }}</span></td>
                   <td style="font-weight:700;color:var(--primary);white-space:nowrap;">{{ h.part_number }}</td>
@@ -839,16 +675,15 @@
                   <td class="hide-mobile" style="font-size:11px;">{{ h.status_qc || '-' }}</td>
                   <td class="hide-mobile" style="font-size:11px;">{{ h.type === 'masuk' ? (h.supplier || '-') : (h.tujuan || '-') }}</td>
                   <td class="hide-mobile" style="font-size:11px;color:var(--primary);font-weight:600;">{{ h.input_by || '-' }}</td>
-                  <td v-if="isAdmin" class="hide-mobile">
-                    <button class="btn btn-danger-soft btn-sm" @click="deleteHistory(h.id)">
-                      <i class="ti ti-trash"></i>
-                    </button>
-                  </td>
+                  <td v-if="isAdmin" class="hide-mobile"><button class="btn btn-danger-soft btn-sm" @click="deleteHistory(h.id)"><i class="ti ti-trash"></i></button></td>
                   <td>
-                    <button class="btn btn-wa btn-sm" @click="shareWA(h)" title="Share ke WhatsApp">
-                      <i class="ti ti-brand-whatsapp"></i>
-                    </button>
+                      <button v-if="h.type === 'masuk' && h.status_qc === 'Before Check QC'" class="btn btn-outline btn-sm" @click="openQcModal(h)" title="Approve QC">
+                        <i class="ti ti-clipboard-check"></i>
+                      </button>
+                      <span v-else style="color:var(--text-muted);">—</span>
                   </td>
+                  <td><button class="btn btn-wa btn-sm" @click="shareWA(h)" title="Share ke WhatsApp"><i class="ti ti-brand-whatsapp"></i></button></td>
+                  <td><button class="btn btn-pdf btn-sm" @click="quickDownloadSJ(h)" title="Download Surat Jalan"><i class="ti ti-file-type-pdf"></i></button></td>
                 </tr>
               </tbody>
             </table>
@@ -861,77 +696,66 @@
     <!-- MOBILE NAV -->
     <nav class="mobile-nav">
       <div class="mobile-nav-inner">
-        <div class="nav-tab" :class="{active: page==='dashboard'}" @click="goPage('dashboard')">
-          <i class="ti ti-layout-dashboard"></i>
-          <span>Dashboard</span>
-        </div>
-        <div class="nav-tab" :class="{active: page==='input'}" @click="goPage('input')" v-if="isAdmin">
-          <i class="ti ti-circle-plus"></i>
-          <span>Input</span>
-        </div>
-        <div class="nav-tab" :class="{active: page==='partlist'}" @click="goPage('partlist')">
-          <i class="ti ti-box"></i>
-          <span>Part</span>
-        </div>
-        <div class="nav-tab" :class="{active: page==='history'}" @click="goPage('history')">
-          <i class="ti ti-history"></i>
-          <span>History</span>
-        </div>
+        <div class="nav-tab" :class="{active: page==='dashboard'}" @click="goPage('dashboard')"><i class="ti ti-layout-dashboard"></i><span>Dashboard</span></div>
+        <div class="nav-tab" :class="{active: page==='input'}" @click="goPage('input')" v-if="isAdmin"><i class="ti ti-circle-plus"></i><span>Input</span></div>
+        <div class="nav-tab" :class="{active: page==='partlist'}" @click="goPage('partlist')"><i class="ti ti-box"></i><span>Part</span></div>
+        <div class="nav-tab" :class="{active: page==='history'}" @click="goPage('history')"><i class="ti ti-history"></i><span>History</span></div>
       </div>
     </nav>
 
-  </div><!-- end .app-layout -->
-</div><!-- end #app -->
+  </div>
+</div>
 
 <script>
-const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+const { createApp, ref, computed, onMounted, nextTick } = Vue;
 
 createApp({
   setup() {
-    // ---- STATE ----
+    // Cek auth — kalau tidak ada token, redirect ke login
     const token = ref(localStorage.getItem('token') || null);
     const currentUser = ref(JSON.parse(localStorage.getItem('currentUser') || 'null'));
-    const isLoggedIn = ref(!!(token.value && currentUser.value));
+
+    if (!token.value || !currentUser.value) {
+      window.location.href = 'login.html';
+      return {};
+    }
+
     const isDark = ref(localStorage.getItem('theme') === 'dark');
     const page = ref('dashboard');
     const partsList = ref([]);
     const historyList = ref([]);
+    const selectedIds = ref([]);
+    const sjModal = ref({ show: false, delivery_to: '', date: '', loading: false });
+    const qcModal = ref({ show: false, id: null, part_number: '', maxQty: 0, qty_ok: 0, keterangan_reject: '', loading: false });
+    const allSelected = computed(() => historyList.value.length > 0 && selectedIds.value.length === historyList.value.length);
     const chartInstance = ref(null);
-
-    // Toast
     const toast = ref({ show: false, msg: '', type: 'success' });
     let toastTimer = null;
+
     function showToast(msg, type = 'success') {
       if (toastTimer) clearTimeout(toastTimer);
       toast.value = { show: true, msg, type };
       toastTimer = setTimeout(() => toast.value.show = false, 3000);
     }
 
-    // Login
-    const loginForm = ref({ username: '', password: '' });
-    const loginError = ref('');
-    const loginLoading = ref(false);
-
-    // Input forms
     const today = () => new Date().toISOString().split('T')[0];
     const masuk = ref({ pn: '', model: '', commodity: '', part_name: '', qty: '', date: today(), status_qc: '', keterangan: '', supplier: '' });
     const keluar = ref({ pn: '', model: '', commodity: '', part_name: '', qty: '', date: today(), status_qc: '', keterangan: '', tujuan: '' });
     const suggests = ref({ masuk: [], keluar: [] });
     const loadingMasuk = ref(false);
     const loadingKeluar = ref(false);
-
-    // New part
-    const newPart = ref({ model: '', commodity: '', part_name: '', part_number: '', stock: 0, min_stock: 1 });
+    const newPart = ref({ model: '', commodity: '', part_name: '', part_number: '', supplier: '', stock: 0, min_stock: 1 });
+    const importFileInput = ref(null);
+    const loadingImport = ref(false);
     const loadingNewPart = ref(false);
-
-    // Filters
     const partSearch = ref('');
     const partModelFilter = ref('');
     const historyFilter = ref({ type: '', search: '' });
-
-    // DateTime
     const timeStr = ref('');
     const dateStr = ref('');
+    const statBeforeQC = ref(0);
+    const statAfterQC = ref(0);
+
     function updateTime() {
       const now = new Date();
       timeStr.value = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -940,15 +764,11 @@ createApp({
     setInterval(updateTime, 1000);
     updateTime();
 
-    // Stats
-    const statBeforeQC = ref(0);
-    const statAfterQC = ref(0);
-
-    // ---- COMPUTED ----
     const isAdmin = computed(() => currentUser.value?.role === 'admin');
     const statOk = computed(() => partsList.value.filter(p => p.stock > p.min_stock).length);
     const statCrit = computed(() => partsList.value.filter(p => p.stock <= p.min_stock && p.stock > 0).length);
     const statEmpty = computed(() => partsList.value.filter(p => p.stock === 0).length);
+    const statTotalReject = computed(() => partsList.value.reduce((sum, p) => sum + (p.total_reject || 0), 0));
     const kritisItems = computed(() => partsList.value.filter(p => p.stock <= p.min_stock && p.stock > 0));
     const habisItems = computed(() => partsList.value.filter(p => p.stock === 0));
     const partModels = computed(() => [...new Set(partsList.value.map(p => p.model).filter(Boolean))].sort());
@@ -960,93 +780,51 @@ createApp({
         (!m || (p.model || '').toLowerCase() === m)
       );
     });
-    const pageTitle = computed(() => ({
-      dashboard: 'Dashboard', input: 'Input Transaksi', partlist: 'Daftar Part', history: 'History Transaksi'
-    })[page.value] || '');
+    const pageTitle = computed(() => ({ dashboard: 'Dashboard', input: 'Input Transaksi', partlist: 'Daftar Part', history: 'History Transaksi' })[page.value] || '');
     const greeting = computed(() => {
       const h = new Date().getHours();
       return h < 11 ? 'Selamat Pagi' : h < 15 ? 'Selamat Siang' : h < 19 ? 'Selamat Sore' : 'Selamat Malam';
     });
 
-    // ---- THEME ----
-    function applyTheme() {
-      document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : '');
-    }
-    function toggleTheme() {
-      isDark.value = !isDark.value;
-      localStorage.setItem('theme', isDark.value ? 'dark' : '');
-      applyTheme();
-    }
+    function applyTheme() { document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : ''); }
+    function toggleTheme() { isDark.value = !isDark.value; localStorage.setItem('theme', isDark.value ? 'dark' : ''); applyTheme(); }
     applyTheme();
 
-    // ---- API ----
     async function apiFetch(endpoint, options = {}) {
       const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
       if (token.value) headers['Authorization'] = 'Bearer ' + token.value;
       const res = await fetch(API_URL + endpoint, { ...options, headers });
+      if (res.status === 401) { logout(); return; }
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Error ' + res.status);
       return data;
     }
 
-    // ---- AUTH ----
-    async function login() {
-      loginLoading.value = true;
-      loginError.value = '';
-      try {
-        const data = await apiFetch('/auth/login', {
-          method: 'POST',
-          body: JSON.stringify({ username: loginForm.value.username.trim(), password: loginForm.value.password.trim() })
-        });
-        token.value = data.token;
-        currentUser.value = data.user;
-        localStorage.setItem('token', token.value);
-        localStorage.setItem('currentUser', JSON.stringify(currentUser.value));
-        isLoggedIn.value = true;
-        masuk.value.date = today();
-        keluar.value.date = today();
-        await loadAll();
-      } catch (err) {
-        loginError.value = err.message;
-      } finally {
-        loginLoading.value = false;
-      }
-    }
-
     function logout() {
       if (token.value) apiFetch('/auth/logout', { method: 'POST' }).catch(() => {});
-      token.value = null;
-      currentUser.value = null;
       localStorage.removeItem('token');
       localStorage.removeItem('currentUser');
-      isLoggedIn.value = false;
-      if (chartInstance.value) { chartInstance.value.destroy(); chartInstance.value = null; }
+      window.location.href = 'login.php';
     }
 
-    // ---- LOAD DATA ----
-    async function loadAll() {
-      await loadParts();
-      await loadDashboard();
-    }
+    async function loadAll() { await loadParts(); await loadDashboard(); }
 
     async function loadParts() {
-      try {
-        partsList.value = await apiFetch('/parts');
-      } catch (err) {
-        showToast('Gagal load parts: ' + err.message, 'error');
-      }
+      try { partsList.value = await apiFetch('/parts'); }
+      catch (err) { showToast('Gagal load parts: ' + err.message, 'error'); }
     }
 
     async function loadDashboard() {
       try {
         const hist = await apiFetch('/transactions');
-        let bqc = 0, aqc = 0;
+        let bqc = 0, aqcMasuk = 0, keluarTotal = 0;
         hist.forEach(h => {
           if (h.type === 'masuk' && h.status_qc === 'Before Check QC') bqc += h.qty;
-          if (h.type === 'masuk' && h.status_qc === 'After Check QC') aqc += h.qty;
+          if (h.type === 'masuk' && h.status_qc === 'After Check QC') aqcMasuk += (h.qty_ok ?? h.qty);
+          if (h.type === 'keluar') keluarTotal += h.qty;
         });
         statBeforeQC.value = bqc;
-        statAfterQC.value = aqc;
+        statAfterQC.value = Math.max(aqcMasuk - keluarTotal, 0);
       } catch {}
       await loadChart();
     }
@@ -1068,14 +846,7 @@ createApp({
               { label: 'Keluar', data: chartData.map(d => d.keluar), backgroundColor: 'rgba(214,57,57,0.8)', borderRadius: 6, borderSkipped: false }
             ]
           },
-          options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { grid: { display: false }, ticks: { color: '#8892a4', font: { size: 11 } } },
-              y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#8892a4', font: { size: 11 } } }
-            }
-          }
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#8892a4', font: { size: 11 } } }, y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#8892a4', font: { size: 11 } } } } }
         });
       } catch {}
     }
@@ -1086,228 +857,222 @@ createApp({
         if (historyFilter.value.type) params.append('type', historyFilter.value.type);
         if (historyFilter.value.search) params.append('search', historyFilter.value.search);
         historyList.value = await apiFetch('/transactions?' + params.toString());
-      } catch (err) {
-        showToast('Gagal load history: ' + err.message, 'error');
-      }
+      } catch (err) { showToast('Gagal load history: ' + err.message, 'error'); }
     }
 
-    // ---- NAVIGATION ----
     function goPage(p) {
-      if (p === 'input' && !isAdmin.value) {
-        showToast('Hanya admin yang bisa input transaksi!', 'error');
-        return;
-      }
+      if (p === 'input' && !isAdmin.value) { showToast('Hanya admin yang bisa input transaksi!', 'error'); return; }
       page.value = p;
       if (p === 'history') loadHistory();
       if (p === 'dashboard') nextTick(() => loadChart());
     }
 
-    // ---- AUTOCOMPLETE ----
     function searchSuggest(type) {
       const q = (type === 'masuk' ? masuk.value.pn : keluar.value.pn).toLowerCase();
       if (!q) { suggests.value[type] = []; return; }
-      suggests.value[type] = partsList.value.filter(p =>
-        p.part_number.toLowerCase().includes(q) || p.part_name.toLowerCase().includes(q)
-      ).slice(0, 10);
+      suggests.value[type] = partsList.value.filter(p => p.part_number.toLowerCase().includes(q) || p.part_name.toLowerCase().includes(q)).slice(0, 10);
     }
 
     function selectPart(type, part) {
-      if (type === 'masuk') {
-        masuk.value.pn = part.part_number;
-        masuk.value.model = part.model || '';
-        masuk.value.commodity = part.commodity;
-        masuk.value.part_name = part.part_name;
-        suggests.value.masuk = [];
-      } else {
-        keluar.value.pn = part.part_number;
-        keluar.value.model = part.model || '';
-        keluar.value.commodity = part.commodity;
-        keluar.value.part_name = part.part_name;
-        suggests.value.keluar = [];
-      }
+      if (type === 'masuk') { masuk.value.pn = part.part_number; masuk.value.model = part.model || ''; masuk.value.commodity = part.commodity; masuk.value.part_name = part.part_name; masuk.value.supplier = part.supplier || ''; suggests.value.masuk = []; }
+      else { keluar.value.pn = part.part_number; keluar.value.model = part.model || ''; keluar.value.commodity = part.commodity; keluar.value.part_name = part.part_name; suggests.value.keluar = []; }
     }
 
-    // ---- SUBMIT TRANSAKSI ----
     async function submitMasuk() {
       loadingMasuk.value = true;
       try {
-        await apiFetch('/transactions', {
-          method: 'POST',
-          body: JSON.stringify({
-            part_number: masuk.value.pn, type: 'masuk',
-            qty: parseInt(masuk.value.qty), date: masuk.value.date,
-            status_qc: masuk.value.status_qc, keterangan: masuk.value.keterangan || null,
-            supplier: masuk.value.supplier || null,
-          })
-        });
+        await apiFetch('/transactions', { method: 'POST', body: JSON.stringify({ part_number: masuk.value.pn, type: 'masuk', qty: parseInt(masuk.value.qty), date: masuk.value.date, status_qc: masuk.value.status_qc, keterangan: masuk.value.keterangan || null, supplier: masuk.value.supplier || null }) });
         showToast('Transaksi masuk berhasil disimpan!');
         masuk.value = { pn: '', model: '', commodity: '', part_name: '', qty: '', date: today(), status_qc: '', keterangan: '', supplier: '' };
         await loadParts(); loadDashboard();
-      } catch (err) {
-        showToast(err.message, 'error');
-      } finally {
-        loadingMasuk.value = false;
-      }
+      } catch (err) { showToast(err.message, 'error'); }
+      finally { loadingMasuk.value = false; }
     }
 
     async function submitKeluar() {
       loadingKeluar.value = true;
       try {
-        await apiFetch('/transactions', {
-          method: 'POST',
-          body: JSON.stringify({
-            part_number: keluar.value.pn, type: 'keluar',
-            qty: parseInt(keluar.value.qty), date: keluar.value.date,
-            status_qc: keluar.value.status_qc, keterangan: keluar.value.keterangan || null,
-            tujuan: keluar.value.tujuan || null,
-          })
-        });
+        await apiFetch('/transactions', { method: 'POST', body: JSON.stringify({ part_number: keluar.value.pn, type: 'keluar', qty: parseInt(keluar.value.qty), date: keluar.value.date, status_qc: keluar.value.status_qc, keterangan: keluar.value.keterangan || null, tujuan: keluar.value.tujuan || null }) });
         showToast('Transaksi keluar berhasil disimpan!');
         keluar.value = { pn: '', model: '', commodity: '', part_name: '', qty: '', date: today(), status_qc: '', keterangan: '', tujuan: '' };
         await loadParts(); loadDashboard();
-      } catch (err) {
-        showToast(err.message, 'error');
-      } finally {
-        loadingKeluar.value = false;
-      }
+      } catch (err) { showToast(err.message, 'error'); }
+      finally { loadingKeluar.value = false; }
     }
 
-    // ---- SUBMIT TAMBAH PART ----
     async function submitTambahPart() {
       loadingNewPart.value = true;
       try {
-        await apiFetch('/parts', {
-          method: 'POST',
-          body: JSON.stringify({
-            model: newPart.value.model || null,
-            commodity: newPart.value.commodity,
-            part_name: newPart.value.part_name,
-            part_number: newPart.value.part_number,
-            stock: parseInt(newPart.value.stock) || 0,
-            min_stock: parseInt(newPart.value.min_stock) || 1,
-          })
-        });
+        await apiFetch('/parts', { method: 'POST', body: JSON.stringify({ model: newPart.value.model || null, commodity: newPart.value.commodity, part_name: newPart.value.part_name, part_number: newPart.value.part_number, supplier: newPart.value.supplier || null, stock: parseInt(newPart.value.stock) || 0, min_stock: parseInt(newPart.value.min_stock) || 1 }) });
         showToast('Part berhasil ditambahkan!');
-        newPart.value = { model: '', commodity: '', part_name: '', part_number: '', stock: 0, min_stock: 1 };
+        newPart.value = { model: '', commodity: '', part_name: '', part_number: '', supplier: '', stock: 0, min_stock: 1 };
+        await loadParts(); loadDashboard();
+      } catch (err) { showToast(err.message, 'error'); }
+      finally { loadingNewPart.value = false; }
+    }
+
+    async function handleImportFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      loadingImport.value = true;
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const headers = {};
+        if (token.value) headers['Authorization'] = 'Bearer ' + token.value;
+        const res = await fetch(API_URL + '/parts/import', { method: 'POST', headers, body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Import gagal');
+        showToast(data.message || 'Import berhasil!');
         await loadParts(); loadDashboard();
       } catch (err) {
         showToast(err.message, 'error');
       } finally {
-        loadingNewPart.value = false;
+        loadingImport.value = false;
+        e.target.value = '';
       }
     }
 
-    // ---- DELETE ----
     async function deletePart(id) {
-      if (!confirm('Hapus part ini? Semua transaksi terkait juga akan terhapus!')) return;
-      try {
-        await apiFetch('/parts/' + id, { method: 'DELETE' });
-        showToast('Part dihapus');
-        await loadParts(); loadDashboard();
-      } catch (err) {
-        showToast(err.message, 'error');
-      }
+      if (!confirm('Hapus part ini?')) return;
+      try { await apiFetch('/parts/' + id, { method: 'DELETE' }); showToast('Part dihapus'); await loadParts(); loadDashboard(); }
+      catch (err) { showToast(err.message, 'error'); }
     }
 
     async function deleteHistory(id) {
-      if (!confirm('Hapus transaksi ini? Stok akan dikembalikan.')) return;
-      try {
-        await apiFetch('/transactions/' + id, { method: 'DELETE' });
-        showToast('Transaksi dihapus');
-        await loadParts(); loadHistory(); loadDashboard();
-      } catch (err) {
-        showToast(err.message, 'error');
-      }
+      if (!confirm('Hapus transaksi ini?')) return;
+      try { await apiFetch('/transactions/' + id, { method: 'DELETE' }); showToast('Transaksi dihapus'); await loadParts(); loadHistory(); loadDashboard(); }
+      catch (err) { showToast(err.message, 'error'); }
     }
 
-    // ---- EXPORT ----
     async function exportCSV() {
       try {
         const hist = await apiFetch('/transactions');
-        let csv = 'Tanggal,Tipe,PN,Name,Qty,Status QC,Ket\n';
-        hist.forEach(h => {
-          const ket = h.type === 'masuk' ? (h.supplier || '-') : (h.tujuan || '-');
-          csv += `${h.date},${h.type},${h.part_number},${h.part_name},${h.qty},"${h.status_qc}","${ket}"\n`;
-        });
+        let csv = 'Tanggal,Tipe,PN,Name,Qty,Qty OK,Reject,Ket Reject,Status QC,Ket\n';
+        hist.forEach(h => { const ket = h.type === 'masuk' ? (h.supplier || '-') : (h.tujuan || '-'); const qtyOk = h.qty_ok ?? h.qty; const reject = h.status_qc === 'After Check QC' ? (h.qty - qtyOk) : 0; csv += `${h.date},${h.type},${h.part_number},${h.part_name},${h.qty},${qtyOk},${reject},"${h.keterangan_reject || '-'}","${h.status_qc}","${ket}"\n`; });
         const b = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const l = document.createElement('a');
-        l.href = URL.createObjectURL(b);
-        l.download = 'stok-' + new Date().toISOString().split('T')[0] + '.csv';
-        l.click();
-      } catch (err) {
-        showToast('Gagal export: ' + err.message, 'error');
-      }
+        const l = document.createElement('a'); l.href = URL.createObjectURL(b); l.download = 'stok-' + new Date().toISOString().split('T')[0] + '.csv'; l.click();
+      } catch (err) { showToast('Gagal export: ' + err.message, 'error'); }
     }
 
     function exportExcelStok() {
       try {
         if (!partsList.value.length) { showToast('Data part kosong!', 'error'); return; }
-        const data = partsList.value.map(p => ({
-          'Model': p.model || '-', 'Commodity': p.commodity,
-          'Part Name': p.part_name, 'Part Number': p.part_number,
-          'Sisa Stok': p.stock, 'Minimal Stok': p.min_stock,
-          'Status': p.stock === 0 ? 'HABIS' : p.stock <= p.min_stock ? 'KRITIS' : 'OK',
-        }));
+        const data = partsList.value.map(p => ({ 'Model': p.model || '-', 'Commodity': p.commodity, 'Part Name': p.part_name, 'Part Number': p.part_number, 'Supplier': p.supplier || '-', 'Sisa Stok': p.stock, 'Minimal Stok': p.min_stock, 'Reject': p.total_reject || 0, 'Status': p.stock === 0 ? 'HABIS' : p.stock <= p.min_stock ? 'KRITIS' : 'OK' }));
         const ws = XLSX.utils.json_to_sheet(data);
-        ws['!cols'] = [{ wch:10 },{ wch:20 },{ wch:45 },{ wch:20 },{ wch:12 },{ wch:14 },{ wch:10 }];
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Stok Part');
+        ws['!cols'] = [{ wch:10 },{ wch:20 },{ wch:45 },{ wch:20 },{ wch:22 },{ wch:12 },{ wch:14 },{ wch:10 },{ wch:10 }];
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Stok Part');
         XLSX.writeFile(wb, `rekap-stok-${new Date().toISOString().split('T')[0]}.xlsx`);
         showToast('Excel berhasil didownload!');
-      } catch (err) {
-        showToast('Gagal export: ' + err.message, 'error');
-      }
+      } catch (err) { showToast('Gagal export: ' + err.message, 'error'); }
     }
 
-    // ---- SHARE WA ----
+    function toggleSelectAll(e) {
+      selectedIds.value = e.target.checked ? historyList.value.map(h => h.id) : [];
+    }
+
+    function openSJModal() {
+      sjModal.value = { show: true, delivery_to: '', date: today(), loading: false };
+    }
+
+    function openQcModal(h) {
+  qcModal.value = { show: true, id: h.id, part_number: h.part_number, maxQty: h.qty, qty_ok: h.qty, keterangan_reject: '', loading: false };
+}
+
+async function submitQcModal() {
+  qcModal.value.loading = true;
+  try {
+    await apiFetch('/transactions/' + qcModal.value.id + '/approve-qc', {
+      method: 'POST',
+      body: JSON.stringify({
+        qty_ok: parseInt(qcModal.value.qty_ok) || 0,
+        keterangan_reject: qcModal.value.keterangan_reject || null,
+      }),
+    });
+    showToast('QC berhasil di-approve!');
+    qcModal.value.show = false;
+    await loadHistory();
+    await loadParts();
+    loadDashboard();
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    qcModal.value.loading = false;
+  }
+}
+
+    async function downloadSJ(ids, delivery_to, date) {
+      try {
+        const res = await fetch(API_URL + '/surat-jalan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer ' + token.value },
+          body: JSON.stringify({ ids, delivery_to, date })
+        });
+        if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.message || 'Gagal generate PDF'); }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'surat-jalan-' + Date.now() + '.pdf'; a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) { showToast(err.message, 'error'); }
+    }
+
+    async function submitSJModal() {
+      sjModal.value.loading = true;
+      await downloadSJ(selectedIds.value, sjModal.value.delivery_to, sjModal.value.date);
+      sjModal.value.loading = false;
+      sjModal.value.show = false;
+      selectedIds.value = [];
+    }
+
+    async function quickDownloadSJ(h) {
+      await downloadSJ([h.id], '', h.date);
+    }
+
     function shareWA(h) {
-      const tipe = h.type === 'masuk' ? '📥 *BARANG MASUK*' : '📤 *BARANG KELUAR*';
-      const ket = h.type === 'masuk' ? (h.supplier ? '🏭 Supplier : ' + h.supplier : '') : (h.tujuan ? '🎯 Tujuan   : ' + h.tujuan : '');
-      const qc = h.status_qc ? '\n✅ QC      : ' + h.status_qc : '';
-      const note = h.keterangan ? '\n📌 Ket     : ' + h.keterangan : '';
-      const by = h.input_by ? '\n👤 By      : ' + h.input_by : '';
+      const tipe = h.type === 'masuk' ? '📥 *BARANG MASUK*' : '📤 *BARANG KELUAR/DELIVERY*';
       const time = h.time ? ' ' + h.time : '';
 
-      const msg =
-        tipe + '\n' +
-        '━━━━━━━━━━━━━━━━━━\n' +
-        '🔢 PN      : ' + h.part_number + '\n' +
-        '📝 Nama    : ' + h.part_name + '\n' +
-        '📦 Qty     : ' + h.qty + ' pcs\n' +
-        '📅 Tgl     : ' + h.date + time +
-        (ket ? '\n' + ket : '') +
-        qc + note + by + '\n' +
-        '━━━━━━━━━━━━━━━━━━\n' +
-        '_Control Stock App_';
+      const lines = [
+        tipe,
+        '━━━━━━━━━━━━━━━━━━',
+        '🔢 PN        : ' + h.part_number,
+        '📝 Nama      : ' + h.part_name,
+        h.model ? '🏷️ Model     : ' + h.model : null,
+        h.commodity ? '🧩 Commodity : ' + h.commodity : null,
+        '📦 Qty       : ' + h.qty + ' pcs',
+        '📅 Tgl       : ' + h.date + time,
+        h.type === 'masuk'
+          ? (h.supplier ? '🏭 Supplier  : ' + h.supplier : null)
+          : (h.tujuan ? '🎯 Tujuan    : ' + h.tujuan : null),
+        h.status_qc ? '✅ QC        : ' + h.status_qc : null,
+        h.keterangan ? '📌 Ket       : ' + h.keterangan : null,
+        h.input_by ? '👤 By        : ' + h.input_by : null,
+        '━━━━━━━━━━━━━━━━━━',
+        '_System Control Stock New Project_',
+      ];
 
-      const url = 'https://wa.me/?text=' + encodeURIComponent(msg);
-      window.open(url, '_blank');
+      const msg = lines.filter(Boolean).join('\n');
+      window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
     }
 
-    // ---- INIT ----
-    onMounted(() => {
-      if (isLoggedIn.value) {
-        masuk.value.date = today();
-        keluar.value.date = today();
-        loadAll();
-      }
-    });
+    onMounted(() => { masuk.value.date = today(); keluar.value.date = today(); loadAll(); });
 
     return {
-      token, currentUser, isLoggedIn, isDark, page,
-      partsList, historyList, toast,
-      loginForm, loginError, loginLoading,
+      token, currentUser, isDark, page, partsList, historyList, toast,
       masuk, keluar, suggests, loadingMasuk, loadingKeluar,
-      newPart, loadingNewPart,
-      partSearch, partModelFilter, historyFilter,
+      newPart, loadingNewPart, partSearch, partModelFilter, historyFilter,
+      importFileInput, loadingImport, handleImportFile,
       timeStr, dateStr, statBeforeQC, statAfterQC,
-      isAdmin, statOk, statCrit, statEmpty, kritisItems, habisItems,
+      isAdmin, statOk, statCrit, statEmpty, statTotalReject, kritisItems, habisItems,
       partModels, filteredParts, pageTitle, greeting,
-      login, logout, toggleTheme,
-      goPage, searchSuggest, selectPart,
+      logout, toggleTheme, goPage, searchSuggest, selectPart,
       submitMasuk, submitKeluar, submitTambahPart,
-      deletePart, deleteHistory,
-      exportCSV, exportExcelStok, loadHistory, shareWA,
+      deletePart, deleteHistory, exportCSV, exportExcelStok, loadHistory, shareWA,
+      selectedIds, sjModal, allSelected, toggleSelectAll, openSJModal, submitSJModal, quickDownloadSJ,
+      qcModal, openQcModal, submitQcModal,
     };
   }
 }).mount('#app');
