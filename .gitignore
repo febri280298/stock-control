@@ -25,3 +25,7 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Database dump (berisi data & password_hash) - jangan di-push
+full.backup
+*.dump
