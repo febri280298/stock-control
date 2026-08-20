@@ -233,7 +233,10 @@
 <body>
 
 <script>
-  const API_URL = 'https://daylistockproject.bonecomtricom.net/api';
+  // Menyesuaikan sendiri dengan lokasi halaman ini:
+  //   lokal      http://127.0.0.1:8009/login.php -> http://127.0.0.1:8009/api
+  //   production https://daylistockproject.bonecomtricom.net/login.php -> .../api
+  const API_URL = location.origin + location.pathname.replace(/\/[^/]*$/, '') + '/api';
 </script>
 
 <div id="app">
