@@ -623,6 +623,10 @@
                 <div class="card-body">
                   <label style="font-size:12px;font-weight:600;">Delivery To</label>
                   <input class="form-ctrl" style="margin:6px 0 12px;" v-model="sjModal.delivery_to" placeholder="Nama tujuan / customer">
+                  <label style="font-size:12px;font-weight:600;">Project</label>
+                  <input class="form-ctrl" style="margin:6px 0 12px;" v-model="sjModal.project" placeholder="Nama project (opsional)">
+                  <label style="font-size:12px;font-weight:600;">No. PO</label>
+                  <input class="form-ctrl" style="margin:6px 0 12px;" v-model="sjModal.no_po" placeholder="Nomor PO (opsional)">
                   <label style="font-size:12px;font-weight:600;">Tanggal</label>
                   <input class="form-ctrl" style="margin:6px 0 16px;" type="date" v-model="sjModal.date">
                   <div style="display:flex;gap:8px;">
@@ -728,7 +732,7 @@ createApp({
     const partsList = ref([]);
     const historyList = ref([]);
     const selectedIds = ref([]);
-    const sjModal = ref({ show: false, delivery_to: '', date: '', loading: false });
+    const sjModal = ref({ show: false, delivery_to: '', project: '', no_po: '', date: '', loading: false });
     const qcModal = ref({ show: false, id: null, part_number: '', maxQty: 0, qty_ok: 0, keterangan_reject: '', loading: false });
     const allSelected = computed(() => historyList.value.length > 0 && selectedIds.value.length === historyList.value.length);
     const chartInstance = ref(null);
@@ -977,7 +981,7 @@ createApp({
     }
 
     function openSJModal() {
-      sjModal.value = { show: true, delivery_to: '', date: today(), loading: false };
+      sjModal.value = { show: true, delivery_to: '', project: '', no_po: '', date: today(), loading: false };
     }
 
     function openQcModal(h) {
@@ -1006,12 +1010,18 @@ async function submitQcModal() {
   }
 }
 
-    async function downloadSJ(ids, delivery_to, date) {
+    async function downloadSJ(ids, opts = {}) {
       try {
         const res = await fetch(API_URL + '/surat-jalan', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer ' + token.value },
-          body: JSON.stringify({ ids, delivery_to, date })
+          body: JSON.stringify({
+            ids,
+            delivery_to: opts.delivery_to || '',
+            date:        opts.date || '',
+            project:     opts.project || '',
+            no_po:       opts.no_po || '',
+          })
         });
         if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.message || 'Gagal generate PDF'); }
         const blob = await res.blob();
@@ -1024,14 +1034,19 @@ async function submitQcModal() {
 
     async function submitSJModal() {
       sjModal.value.loading = true;
-      await downloadSJ(selectedIds.value, sjModal.value.delivery_to, sjModal.value.date);
+      await downloadSJ(selectedIds.value, {
+        delivery_to: sjModal.value.delivery_to,
+        date:        sjModal.value.date,
+        project:     sjModal.value.project,
+        no_po:       sjModal.value.no_po,
+      });
       sjModal.value.loading = false;
       sjModal.value.show = false;
       selectedIds.value = [];
     }
 
     async function quickDownloadSJ(h) {
-      await downloadSJ([h.id], '', h.date);
+      await downloadSJ([h.id], { date: h.date });
     }
 
     function shareWA(h) {
