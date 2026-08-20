@@ -46,6 +46,9 @@
   .info-r { left: 361pt; top: 160pt; }
 
   /* ---------- tabel item ---------- */
+  /* Sengaja auto-layout: table-layout:fixed diabaikan dompdf (kolom jadi
+     rata semua). Lebar dijaga lewat <th> + PdfText::fit() yang memastikan
+     tidak ada kata melebihi lebar kolomnya. */
   .items { left: 28.2pt; top: 188.3pt; width: 516pt; }
   .items th {
     border: 0.8pt solid #000;
@@ -64,6 +67,8 @@
     font-size: 8.5pt;
     padding: 0 3pt;
     vertical-align: middle;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
   .items td.c { text-align: center; }
   .items tr.fill td { border-bottom: 0.8pt solid #000; height: {{ $fill }}pt; }
@@ -128,14 +133,21 @@
     </thead>
     <tbody>
       @foreach ($items as $i => $item)
+        @php
+            // Lebar pakai = lebar kolom dikurangi padding kiri-kanan (3pt + 3pt).
+            [$nama, $szNama] = \App\Support\PdfText::fit($item->part->part_name   ?? '-', 152.9);
+            [$pnum, $szPnum] = \App\Support\PdfText::fit($item->part->part_number ?? '-', 128.2);
+            $ketRaw = $item->type === 'masuk' ? $item->supplier : $item->tujuan;
+            [$ket,  $szKet]  = \App\Support\PdfText::fit($ketRaw ?: '-', 42.1);
+        @endphp
         <tr>
           <td class="c">{{ $i + 1 }}</td>
-          <td>{{ $item->part->part_name ?? '-' }}</td>
-          <td>{{ $item->part->part_number ?? '-' }}</td>
+          <td style="font-size:{{ $szNama }}pt; line-height:9pt;">{{ $nama }}</td>
+          <td style="font-size:{{ $szPnum }}pt; line-height:9pt;">{{ $pnum }}</td>
           <td class="c"></td>
           <td class="c">{{ $item->qty }}</td>
           <td class="c">PCS</td>
-          <td>{{ $item->type === 'masuk' ? ($item->supplier ?? '-') : ($item->tujuan ?? '-') }}</td>
+          <td style="font-size:{{ $szKet }}pt; line-height:9pt;">{{ $ket }}</td>
         </tr>
       @endforeach
       <tr class="fill">
