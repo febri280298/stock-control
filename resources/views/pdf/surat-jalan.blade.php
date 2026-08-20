@@ -4,9 +4,43 @@
   (Letter 612x792). Jangan ubah angka koordinat tanpa mengukur ulang PDF-nya.
 --}}
 @php
-    $rowH   = 20;      // tinggi baris item
-    $bodyH  = 448.4;   // tinggi area isi tabel (475.5 - 27.1 header)
-    $fill   = max(0, $bodyH - (count($items) * $rowH));
+    use App\Support\PdfText;
+
+    $BODY   = 448.4;   // tinggi area isi tabel (475.5 - 27.1 header)
+    $LINE   = 9;       // tinggi satu baris teks
+    $MINROW = 20;      // tinggi minimum satu item
+
+    // Lebar pakai tiap kolom = lebar kolom dikurangi padding kiri-kanan (3+3).
+    $W_NAMA = 152.9;
+    $W_PNUM = 128.2;
+    $W_KET  = 42.1;
+
+    // Teks panjang dibiarkan turun ke baris berikutnya pada ukuran font penuh.
+    // Tinggi tiap baris dihitung di sini supaya baris pengisi bisa menutup
+    // sisanya dan batas bawah tabel tetap jatuh di 663.8pt seperti form asli.
+    $rows = [];
+    foreach ($items as $item) {
+        $ketRaw = ($item->type === 'masuk' ? $item->supplier : $item->tujuan) ?: '-';
+
+        [$nama, $szNama] = PdfText::fitWords($item->part->part_name   ?? '-', $W_NAMA);
+        [$pnum, $szPnum] = PdfText::fitWords($item->part->part_number ?? '-', $W_PNUM);
+        [$ket,  $szKet]  = PdfText::fitWords($ketRaw, $W_KET);
+
+        $n = max(
+            PdfText::lines($nama, $W_NAMA, $szNama),
+            PdfText::lines($pnum, $W_PNUM, $szPnum),
+            PdfText::lines($ket,  $W_KET,  $szKet),
+        );
+
+        $rows[] = [
+            'item' => $item, 'h' => max($MINROW, $n * $LINE),
+            'nama' => $nama, 'szNama' => $szNama,
+            'pnum' => $pnum, 'szPnum' => $szPnum,
+            'ket'  => $ket,  'szKet'  => $szKet,
+        ];
+    }
+
+    $fill = max(0, $BODY - array_sum(array_column($rows, 'h')));
 @endphp
 <!DOCTYPE html>
 <html>
@@ -63,7 +97,6 @@
     border-right: 0.8pt solid #000;
     border-top: none;
     border-bottom: none;
-    height: {{ $rowH }}pt;
     font-size: 8.5pt;
     padding: 0 3pt;
     vertical-align: middle;
@@ -132,22 +165,16 @@
       </tr>
     </thead>
     <tbody>
-      @foreach ($items as $i => $item)
-        @php
-            // Lebar pakai = lebar kolom dikurangi padding kiri-kanan (3pt + 3pt).
-            [$nama, $szNama] = \App\Support\PdfText::fit($item->part->part_name   ?? '-', 152.9);
-            [$pnum, $szPnum] = \App\Support\PdfText::fit($item->part->part_number ?? '-', 128.2);
-            $ketRaw = $item->type === 'masuk' ? $item->supplier : $item->tujuan;
-            [$ket,  $szKet]  = \App\Support\PdfText::fit($ketRaw ?: '-', 42.1);
-        @endphp
+      @foreach ($rows as $i => $r)
+        {{-- tinggi ditaruh di sel, bukan di <tr>: dompdf mengabaikan height pada baris --}}
         <tr>
-          <td class="c">{{ $i + 1 }}</td>
-          <td style="font-size:{{ $szNama }}pt; line-height:9pt;">{{ $nama }}</td>
-          <td style="font-size:{{ $szPnum }}pt; line-height:9pt;">{{ $pnum }}</td>
+          <td class="c" style="height:{{ $r['h'] }}pt;">{{ $i + 1 }}</td>
+          <td style="font-size:{{ $r['szNama'] }}pt; line-height:{{ $LINE }}pt;">{{ $r['nama'] }}</td>
+          <td style="font-size:{{ $r['szPnum'] }}pt; line-height:{{ $LINE }}pt;">{{ $r['pnum'] }}</td>
           <td class="c"></td>
-          <td class="c">{{ $item->qty }}</td>
+          <td class="c">{{ $r['item']->qty }}</td>
           <td class="c">PCS</td>
-          <td style="font-size:{{ $szKet }}pt; line-height:9pt;">{{ $ket }}</td>
+          <td style="font-size:{{ $r['szKet'] }}pt; line-height:{{ $LINE }}pt;">{{ $r['ket'] }}</td>
         </tr>
       @endforeach
       <tr class="fill">

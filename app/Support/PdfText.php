@@ -37,16 +37,16 @@ class PdfText
     }
 
     /**
-     * Cari ukuran font terbesar yang membuat $text muat dalam $lines baris
-     * selebar $maxWidth pt. Kalau di ukuran terkecil pun masih lewat, teksnya
-     * dipotong dan diberi elipsis.
+     * Ukuran font terbesar (<= $max) yang membuat setiap KATA muat dalam satu
+     * kolom selebar $maxWidth. Ini bukan soal estetika: kata yang lebih lebar
+     * dari kolomnya akan memaksa kolom melar dan merusak tabel. Teks hanya
+     * dipotong kalau di ukuran terkecil pun masih ada kata yang kelewat lebar.
      *
      * @return array{0:string,1:float} [teks siap cetak, ukuran font dalam pt]
      */
-    public static function fit(
+    public static function fitWords(
         string $text,
         float $maxWidth,
-        int $lines = 2,
         float $max = 8.5,
         float $min = 5.5,
         float $step = 0.5
@@ -57,16 +57,14 @@ class PdfText
             return ['', $max];
         }
 
-        $budget = $maxWidth * ($lines > 1 ? $lines * self::FILL : 1);
-
         for ($size = $max; $size >= $min; $size -= $step) {
-            if (self::fits($text, $size, $budget, $maxWidth)) {
+            if (self::widestWord($text, $size) <= $maxWidth) {
                 return [$text, $size];
             }
         }
 
         $cut = $text;
-        while ($cut !== '' && ! self::fits($cut . '...', $min, $budget, $maxWidth)) {
+        while ($cut !== '' && self::widestWord($cut . '...', $min) > $maxWidth) {
             $cut = mb_substr($cut, 0, mb_strlen($cut) - 1);
         }
 
@@ -74,22 +72,43 @@ class PdfText
     }
 
     /**
-     * Muat bila dua syarat terpenuhi: total teks masuk dalam jatah baris, DAN
-     * kata terpanjang tidak melebihi satu kolom. Syarat kedua penting karena
-     * kata yang tidak bisa dipenggal akan memaksa kolom melar.
+     * Jumlah baris yang dibutuhkan teks pada kolom selebar $maxWidth,
+     * meniru pemenggalan per kata seperti yang dilakukan dompdf.
      */
-    private static function fits(string $text, float $size, float $budget, float $maxWidth): bool
+    public static function lines(string $text, float $maxWidth, float $size): int
     {
-        if (self::width($text, $size) > $budget) {
-            return false;
+        $words = preg_split('/\s+/', trim($text), -1, PREG_SPLIT_NO_EMPTY);
+
+        if (! $words) {
+            return 1;
         }
 
-        foreach (preg_split('/\s+/', $text, -1, PREG_SPLIT_NO_EMPTY) as $word) {
-            if (self::width($word, $size) > $maxWidth) {
-                return false;
+        $lines = 1;
+        $cur   = '';
+
+        foreach ($words as $w) {
+            $candidate = $cur === '' ? $w : $cur . ' ' . $w;
+
+            if (self::width($candidate, $size) <= $maxWidth) {
+                $cur = $candidate;
+                continue;
             }
+
+            $lines++;
+            $cur = $w;
         }
 
-        return true;
+        return $lines;
+    }
+
+    private static function widestWord(string $text, float $size): float
+    {
+        $widest = 0.0;
+
+        foreach (preg_split('/\s+/', $text, -1, PREG_SPLIT_NO_EMPTY) as $w) {
+            $widest = max($widest, self::width($w, $size));
+        }
+
+        return $widest;
     }
 }
