@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Transaction;
 use Illuminate\Http\Request;
-use setasign\Fpdi\Fpdi;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class SuratJalanController extends Controller
 {
@@ -14,6 +14,9 @@ class SuratJalanController extends Controller
             'ids'         => 'required|array|min:1',
             'delivery_to' => 'nullable|string',
             'date'        => 'nullable|string',
+            'no'          => 'nullable|string',
+            'project'     => 'nullable|string',
+            'no_po'       => 'nullable|string',
         ]);
 
         $items = Transaction::with('part')
@@ -21,58 +24,22 @@ class SuratJalanController extends Controller
             ->orderBy('id')
             ->get();
 
-        $templatePath = storage_path('app/templates/surat-jalan-template.pdf');
-
-        // Ukuran halaman PDF asli: 612 x 792 pt (Letter)
-        $pdf = new Fpdi('P', 'pt', [612, 792]);
-        $pdf->AddPage();
-        $pdf->setSourceFile($templatePath);
-        $tpl = $pdf->importPage(1);
-        $pdf->useTemplate($tpl, 0, 0, 612, 792);
-
-        $pdf->SetFont('Helvetica', '', 9);
-        $pdf->SetTextColor(0, 0, 0);
-
-        // ===== DELIVERY TO & DATE =====
-        $pdf->SetXY(138, 164);
-        $pdf->Cell(140, 12, $request->delivery_to ?: '-');
-
-        $pdf->SetXY(138, 176);
-        $pdf->Cell(140, 12, $request->date ? date('d-m-Y', strtotime($request->date)) : now()->format('d-m-Y'));
-
-        // ===== TABEL ITEM =====
-        // Ubah 2 angka ini kalau posisi baris pertama / jarak antar baris kurang pas
-        $rowY      = 220;   // posisi Y baris pertama
-        $rowHeight = 20;    // jarak antar baris
-
-        foreach ($items as $i => $item) {
-            $pdf->SetXY(29, $rowY);
-            $pdf->Cell(29.2, $rowHeight, (string) ($i + 1), 0, 0, 'C');
-
-            $pdf->SetXY(61, $rowY);
-            $pdf->Cell(155, $rowHeight, $item->part->part_name ?? '-');
-
-            $pdf->SetXY(220, $rowY);
-            $pdf->Cell(130, $rowHeight, $item->part->part_number ?? '-');
-
-            // UNIQ dikosongin
-
-            $pdf->SetXY(399, $rowY);
-            $pdf->Cell(48, $rowHeight, (string) $item->qty, 0, 0, 'C');
-
-            $pdf->SetXY(447, $rowY);
-            $pdf->Cell(48, $rowHeight, 'PCS', 0, 0, 'C');
-
-            $pdf->SetXY(498, $rowY);
-            $ket = $item->type === 'masuk' ? ($item->supplier ?? '-') : ($item->tujuan ?? '-');
-            $pdf->Cell(45, $rowHeight, $ket);
-
-            $rowY += $rowHeight;
-        }
+        // Form FM-PCD-002 rev.00 digambar ulang di resources/views/pdf/surat-jalan.blade.php
+        // (ukuran Letter 612x792 pt, koordinat mengikuti form aslinya).
+        $pdf = Pdf::loadView('pdf.surat-jalan', [
+            'items'       => $items,
+            'delivery_to' => $request->delivery_to ?: '',
+            'date'        => $request->date
+                                ? date('d-m-Y', strtotime($request->date))
+                                : now()->format('d-m-Y'),
+            'no'          => $request->no ?: '',
+            'project'     => $request->project ?: '',
+            'no_po'       => $request->no_po ?: '',
+        ])->setPaper('letter', 'portrait');
 
         $filename = 'surat-jalan-' . now()->format('Ymd-His') . '.pdf';
 
-        return response($pdf->Output('S', $filename), 200)
+        return response($pdf->output(), 200)
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
