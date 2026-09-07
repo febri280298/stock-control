@@ -8,6 +8,7 @@ use App\Models\PoItem;
 use App\Models\Transaction;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TransactionController extends Controller
 {
@@ -193,7 +194,12 @@ class TransactionController extends Controller
         $data = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i)->format('Y-m-d');
-            $masuk  = Transaction::where('type', 'masuk')->where('date', $date)->where('status_qc', 'After Check QC')->sum('qty_ok');
+            // qty_ok hanya terisi lewat approveQc(). Transaksi yang langsung
+            // diinput sebagai "After Check QC" meninggalkan qty_ok NULL, jadi
+            // harus jatuh ke qty - kalau tidak, batang hijaunya hilang dari grafik.
+            $masuk  = Transaction::where('type', 'masuk')->where('date', $date)
+                ->where('status_qc', 'After Check QC')
+                ->sum(DB::raw('COALESCE(qty_ok, qty)'));
             $keluar = Transaction::where('type', 'keluar')->where('date', $date)->sum('qty');
             $data[] = ['date' => $date, 'masuk' => $masuk, 'keluar' => $keluar];
         }
