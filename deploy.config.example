@@ -1,0 +1,13 @@
+# Salin file ini jadi "deploy.config" lalu sesuaikan isinya.
+# deploy.config sengaja di-gitignore karena berisi detail server.
+
+SSH_HOST=151.106.124.200
+SSH_PORT=65002
+SSH_USER=u136493546
+APP_PATH='$HOME/domains/bonecomtricom.net/public_html/dayli'
+BACKUP_PATH='$HOME/backups-dayli'
+LIVE_URL=https://daylistockproject.bonecomtricom.net
+
+# PHP di server tidak punya ekstensi sodium, sedangkan lcobucci/jwt
+# mensyaratkannya. Aplikasi tetap jalan karena JWT-nya memakai HS256.
+COMPOSER_FLAGS='--no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-sodium'

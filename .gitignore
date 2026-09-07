@@ -29,3 +29,6 @@ Thumbs.db
 # Database dump (berisi data & password_hash) - jangan di-push
 full.backup
 *.dump
+
+# Detail server untuk deploy.sh
+deploy.config
