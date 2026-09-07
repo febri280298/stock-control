@@ -130,8 +130,7 @@
 
     /* LOGO */
     .right-logo { text-align: center; margin-bottom: 28px; }
-    .right-logo img { height: 56px; margin-bottom: 8px; }
-    .right-logo .brand-name { font-size: 13px; font-weight: 800; color: #1e293b; letter-spacing: 1px; text-transform: uppercase; }
+    .right-logo img { height: 100px; margin-bottom: 1px; }
 
     /* WELCOME */
     .welcome { text-align: center; margin-bottom: 32px; }
@@ -259,7 +258,7 @@
 
         <!-- HERO -->
         <div class="hero-text">
-          <h1>CONTROL <span>STOCK</span></h1>
+          <h1>STOK <span>IN </span></h1>
           <div class="divider"></div>
           <p>System Management Inventory Part & Material New Project</p>
         </div>
@@ -311,7 +310,6 @@
         <!-- LOGO -->
         <div class="right-logo">
           <img src="bti.png" alt="Logo" onerror="this.style.display='none'">
-          <div class="brand-name">Bonecom Tricom</div>
         </div>
 
         <!-- WELCOME -->
