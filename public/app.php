@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Control Stock — New Project</title>
+  <title>Control Stock — Inventory System</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="icon" type="image/png" href="bti.png">
 
   <!-- Tabler CSS -->
@@ -12,336 +15,24 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- App CSS (dulu inline <style>, sekarang file terpisah) -->
+  <link rel="stylesheet" href="css/app.css?v=3">
   <!-- Chart.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <!-- SheetJS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <!-- Vue 3 -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.prod.min.js"></script>
-
-  <style>
-    :root {
-      --font: 'Plus Jakarta Sans', sans-serif;
-      --primary: #5f6fff;
-      --primary-dark: #4a57e8;
-      --success: #2fb344;
-      --danger: #d63939;
-      --warning: #f76707;
-      --surface: #ffffff;
-      --surface2: #f4f6fa;
-      --border: #e6e9ef;
-      --text: #1a1f2e;
-      --text-muted: #6c7a99;
-      --radius: 12px;
-      --nav-h: 68px;
-      --sidebar-w: 260px;
+  <!-- Vue 3 (ESM build, biar main.js bisa pake import/export) -->
+  <script type="importmap">
+  {
+    "imports": {
+      "vue": "https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.esm-browser.prod.js"
     }
-    [data-theme="dark"] {
-      --surface: #1a1f2e;
-      --surface2: #111827;
-      --border: #262a46;
-      --text: #e2e8f0;
-      --text-muted: #8892a4;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { height: 100%; font-family: var(--font); background: var(--surface2); color: var(--text); transition: background 0.3s, color 0.3s; }
-
-    /* ===== LAYOUT ===== */
-    .app-layout { display: flex; min-height: 100vh; }
-
-    /* ===== SIDEBAR ===== */
-    .sidebar {
-      width: var(--sidebar-w);
-      background: var(--surface);
-      border-right: 1px solid var(--border);
-      position: fixed; left: 0; top: 0; height: 100vh;
-      z-index: 100;
-      overflow-y: auto;
-      display: flex; flex-direction: column;
-      transition: transform 0.3s;
-    }
-    .sidebar-brand { padding: 20px 20px 16px; border-bottom: 1px solid var(--border); }
-    .sidebar-brand img { width: 100px; display: block; }
-    .sidebar-brand small { font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block; }
-    .nav-section { padding: 16px 12px 0; }
-    .nav-section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); padding: 0 10px; margin-bottom: 6px; }
-    .nav-link {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px;
-      border-radius: 9px;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: all 0.2s;
-      font-size: 13.5px;
-      font-weight: 500;
-      margin-bottom: 2px;
-      border: none; background: transparent; width: 100%; text-align: left;
-    }
-    .nav-link:hover { background: var(--surface2); color: var(--text); }
-    .nav-link.active { background: rgba(95,111,255,0.1); color: var(--primary); font-weight: 700; }
-    .nav-link i { font-size: 18px; line-height: 1; }
-    .sidebar-footer { margin-top: auto; padding: 16px 12px; border-top: 1px solid var(--border); }
-
-    /* ===== MAIN ===== */
-    .main { flex: 1; margin-left: var(--sidebar-w); min-height: 100vh; }
-
-    /* ===== TOPBAR ===== */
-    .topbar {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 0 20px;
-      height: 60px;
-      display: flex; align-items: center; justify-content: space-between;
-      position: sticky; top: 0; z-index: 50;
-    }
-    .topbar-title { font-size: 17px; font-weight: 800; color: var(--text); }
-    .topbar-right { display: flex; align-items: center; gap: 10px; }
-    .datetime-pill {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      padding: 5px 12px;
-      border-radius: 8px;
-      font-size: 12px;
-      text-align: right;
-      line-height: 1.3;
-    }
-    .datetime-pill .time { font-weight: 700; color: var(--primary); font-size: 13px; }
-    .datetime-pill .date { color: var(--text-muted); font-size: 10px; }
-    .icon-btn {
-      width: 36px; height: 36px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--surface2);
-      color: var(--text-muted);
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px;
-      transition: all 0.2s;
-    }
-    .icon-btn:hover { background: var(--surface); color: var(--primary); }
-    .icon-btn i { font-size: 17px; line-height: 1; }
-    .role-badge {
-      background: rgba(95,111,255,0.1);
-      color: var(--primary);
-      font-size: 11px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 6px;
-      text-transform: uppercase;
-    }
-    .greeting { font-size: 12px; color: var(--text-muted); }
-
-    /* ===== PAGE ===== */
-    .page { padding: 20px; }
-
-    /* ===== STAT CARDS ===== */
-    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
-    .stat-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      display: flex; align-items: center; gap: 14px;
-    }
-    .stat-icon {
-      width: 44px; height: 44px;
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; line-height: 1; font-size: 22px;
-    }
-    .stat-icon i { font-size: 22px; line-height: 1; }
-    .stat-icon.blue { background: rgba(95,111,255,0.12); color: var(--primary); }
-    .stat-icon.green { background: rgba(47,179,68,0.12); color: var(--success); }
-    .stat-icon.orange { background: rgba(247,103,7,0.12); color: var(--warning); }
-    .stat-icon.red { background: rgba(214,57,57,0.12); color: var(--danger); }
-    .stat-icon.cyan { background: rgba(23,162,184,0.12); color: #17a2b8; }
-    .stat-icon.purple { background: rgba(111,66,193,0.12); color: #6f42c1; }
-    .stat-body .label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-    .stat-body .value { font-size: 26px; font-weight: 800; color: var(--text); line-height: 1.2; }
-
-    /* ===== CARD ===== */
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; }
-    .card-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-    .card-title { font-size: 14px; font-weight: 700; color: var(--text); }
-    .card-title i { font-size: 15px; }
-    .card-body { padding: 16px 18px; }
-
-    /* ===== CHART ===== */
-    .chart-wrap { position: relative; height: 220px; }
-
-    /* ===== ALERT STRIP ===== */
-    .alert-strip { border-radius: 9px; padding: 12px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-    .alert-strip.warning { background: rgba(247,103,7,0.08); border-left: 3px solid var(--warning); }
-    .alert-strip.danger { background: rgba(214,57,57,0.08); border-left: 3px solid var(--danger); }
-    .alert-strip .pn { font-size: 13px; font-weight: 700; }
-    .alert-strip .name { font-size: 11px; color: var(--text-muted); }
-    .alert-strip .stok { font-size: 13px; font-weight: 700; }
-
-    /* ===== FORMS ===== */
-    .form-group { margin-bottom: 14px; }
-    .form-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; display: block; }
-    .form-ctrl {
-      width: 100%; padding: 11px 14px;
-      border: 1.5px solid var(--border); border-radius: 10px;
-      background: var(--surface2); color: var(--text);
-      font-size: 14px; font-family: var(--font);
-      transition: border 0.2s, box-shadow 0.2s; -webkit-appearance: none;
-    }
-    .form-ctrl:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(95,111,255,0.15); }
-    .form-ctrl[disabled] { opacity: 0.6; cursor: not-allowed; }
-    .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .form-section-bar { height: 5px; border-radius: 3px; margin-bottom: 14px; }
-    .bar-green { background: linear-gradient(90deg, var(--success), #27a03b); }
-    .bar-red { background: linear-gradient(90deg, var(--danger), #b02e2e); }
-
-    /* ===== SUGGEST ===== */
-    .suggest-wrap { position: relative; }
-    .suggestions {
-      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
-      background: var(--surface); border: 1.5px solid var(--border);
-      border-radius: 10px; max-height: 160px; overflow-y: auto;
-      z-index: 200; box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-    }
-    .suggest-item { padding: 10px 14px; font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.15s; }
-    .suggest-item:last-child { border-bottom: none; }
-    .suggest-item:hover { background: var(--surface2); color: var(--primary); }
-    .suggest-item .pn { font-weight: 700; }
-    .suggest-item .nm { font-size: 11px; color: var(--text-muted); }
-
-    /* ===== TABLE ===== */
-    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-    th { background: var(--surface2); padding: 10px 12px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
-    td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); }
-    tbody tr:hover { background: rgba(95,111,255,0.03); }
-    .badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 5px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
-    .badge-ok { background: rgba(47,179,68,0.12); color: var(--success); }
-    .badge-warning { background: rgba(247,103,7,0.12); color: var(--warning); }
-    .badge-danger { background: rgba(214,57,57,0.12); color: var(--danger); }
-    .badge-masuk { background: rgba(47,179,68,0.12); color: var(--success); }
-    .badge-keluar { background: rgba(214,57,57,0.12); color: var(--danger); }
-    .model-tag { background: rgba(95,111,255,0.1); color: var(--primary); padding: 2px 7px; border-radius: 5px; font-size: 10px; font-weight: 700; }
-
-    /* ===== BUTTONS ===== */
-    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; border: none; transition: all 0.2s; font-family: var(--font); }
-    .btn i { font-size: 14px; }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-primary:hover { background: var(--primary-dark); }
-    .btn-success { background: var(--success); color: #fff; }
-    .btn-success:hover { background: #27a03b; }
-    .btn-danger-soft { background: rgba(214,57,57,0.1); color: var(--danger); }
-    .btn-danger-soft:hover { background: rgba(214,57,57,0.2); }
-    .btn-outline { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
-    .btn-full { width: 100%; justify-content: center; padding: 11px; }
-    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
-    .btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 6px; }
-    .btn-wa { background: #25d366; color: #fff; }
-    .btn-wa:hover { background: #1da851; transform: scale(1.05); }
-    .btn-wa:active { transform: scale(0.97); }
-    .btn-pdf { background: var(--danger); color: #fff; }
-    .btn-pdf:hover { background: #b32d2d; transform: scale(1.05); }
-    .btn-pdf:active { transform: scale(0.97); }
-
-    /* ===== FILTER ROW ===== */
-    .filter-row { display: flex; gap: 10px; margin-bottom: 14px; }
-    .filter-row .form-ctrl { flex: 1; }
-    .filter-row select.form-ctrl { max-width: 140px; }
-
-    /* ===== MOBILE NAV ===== */
-    .mobile-nav {
-      display: none;
-      position: fixed; bottom: 0; left: 0; right: 0;
-      height: var(--nav-h);
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      z-index: 100;
-      padding-bottom: env(safe-area-inset-bottom);
-    }
-    .mobile-nav-inner { display: flex; height: 100%; }
-    .nav-tab {
-      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 3px; cursor: pointer; color: var(--text-muted); font-size: 10px; font-weight: 600;
-      transition: color 0.2s; padding: 8px 4px;
-    }
-    .nav-tab i { font-size: 22px; line-height: 1; }
-    .nav-tab.active { color: var(--primary); }
-    .nav-tab.active i { transform: translateY(-1px); }
-
-    /* ===== TOAST ===== */
-    .toast-wrap {
-      position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
-      z-index: 9999; width: calc(100% - 32px); max-width: 400px;
-      pointer-events: none;
-    }
-    .toast {
-      padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
-      display: flex; align-items: center; gap: 8px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-      animation: toastIn 0.3s ease; pointer-events: all;
-    }
-    .toast i { font-size: 16px; }
-    .toast-success { background: var(--success); color: #fff; }
-    .toast-error { background: var(--danger); color: #fff; }
-    @keyframes toastIn { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
-
-    /* ===== ICON FIX ===== */
-    .ti { font-family: "tabler-icons" !important; font-style: normal; font-weight: normal; speak: none;
-      display: inline-block; text-decoration: inherit; width: 1em; text-align: center;
-      font-variant: normal; text-transform: none; line-height: 1em; }
-
-    /* ===== RESPONSIVE ===== */
-    @media (max-width: 768px) {
-      .sidebar { display: none !important; }
-      .main { margin-left: 0; padding-bottom: var(--nav-h); }
-      .mobile-nav { display: block; }
-      .topbar { padding: 0 12px; }
-      .topbar-title { font-size: 14px; }
-      .topbar-right { gap: 6px; }
-      .role-badge { display: none; }
-      .page { padding: 10px; }
-      .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-      .stat-card { padding: 10px; gap: 8px; }
-      .stat-body .value { font-size: 20px; }
-      .stat-icon { width: 36px; height: 36px; }
-      .stat-icon i { font-size: 18px; }
-      .input-row { grid-template-columns: 1fr; gap: 10px; }
-      .input-forms-grid { grid-template-columns: 1fr !important; }
-      .chart-wrap { height: 180px; }
-      .datetime-pill .date { display: none; }
-      .table-wrap { max-width: calc(100vw - 20px); }
-      table { font-size: 11px; min-width: 480px; }
-      th { padding: 8px 6px; font-size: 9px; }
-      td { padding: 8px 6px; }
-      .hide-mobile { display: none !important; }
-      td.td-name { max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      td.td-date { white-space: nowrap; font-size: 10px; }
-      .card-header { padding: 12px 14px; }
-      .card-body { padding: 12px 14px; }
-      .filter-row { flex-wrap: wrap; gap: 8px; }
-      .filter-row select.form-ctrl { max-width: 110px; }
-    }
-    @media (min-width: 769px) {
-      .mobile-nav { display: none !important; }
-    }
-
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-    td.no-data { text-align: center; color: var(--text-muted); padding: 32px; }
-  </style>
+  }
+  </script>
 </head>
 <body>
 
-<script>
-  // Menyesuaikan sendiri dengan lokasi halaman ini:
-  //   lokal      http://127.0.0.1:8009/login.php -> http://127.0.0.1:8009/api
-  //   production https://daylistockproject.bonecomtricom.net/login.php -> .../api
-  const API_URL = location.origin + location.pathname.replace(/\/[^/]*$/, '') + '/api';
-</script>
-
-<div id="app">
+<div id="app" v-cloak>
 
   <!-- TOAST -->
   <div class="toast-wrap" v-if="toast.show">
@@ -364,8 +55,14 @@
         <button class="nav-link" :class="{active: page==='dashboard'}" @click="goPage('dashboard')">
           <i class="ti ti-layout-dashboard"></i> Dashboard
         </button>
-        <button class="nav-link" :class="{active: page==='input'}" @click="goPage('input')" v-if="isAdmin">
+        <button class="nav-link" :class="{active: page==='input'}" @click="goPage('input')" v-if="canManage">
           <i class="ti ti-circle-plus"></i> Input Transaksi
+        </button>
+        <button class="nav-link" :class="{active: page==='po'}" @click="goPage('po')" v-if="isAdmin || isMarketing">
+          <i class="ti ti-file-invoice"></i> Input PO
+        </button>
+        <button class="nav-link" :class="{active: page==='porekap'}" @click="goPage('porekap')">
+          <i class="ti ti-list-details"></i> Rekap PO
         </button>
         <button class="nav-link" :class="{active: page==='partlist'}" @click="goPage('partlist')">
           <i class="ti ti-box"></i> Daftar Part
@@ -373,11 +70,17 @@
         <button class="nav-link" :class="{active: page==='history'}" @click="goPage('history')">
           <i class="ti ti-history"></i> History
         </button>
+        <button class="nav-link" :class="{active: page==='sjhistory'}" @click="goPage('sjhistory')" v-if="isAdmin || isPcd">
+          <i class="ti ti-truck-delivery"></i> History Surat Jalan
+        </button>
+        <button class="nav-link" :class="{active: page==='auditlog'}" @click="goPage('auditlog')" v-if="isAdmin">
+          <i class="ti ti-shield-lock"></i> Audit Trail
+        </button>
       </div>
       <div class="nav-section" style="margin-top:8px;">
         <div class="nav-section-label">Tools</div>
         <button class="nav-link" @click="exportCSV">
-          <i class="ti ti-file-type-csv"></i> Export CSV
+          <i class="ti ti-file-spreadsheet"></i> Export History Excel
         </button>
         <button class="nav-link" @click="exportExcelStok">
           <i class="ti ti-file-spreadsheet"></i> Export Stok Excel
@@ -423,6 +126,8 @@
           <div class="stat-card"><div class="stat-icon red"><i class="ti ti-alert-circle"></i></div><div class="stat-body"><div class="label">Habis</div><div class="value">{{ statEmpty }}</div></div></div>
           <div class="stat-card"><div class="stat-icon cyan"><i class="ti ti-clock"></i></div><div class="stat-body"><div class="label">Before QC</div><div class="value">{{ statBeforeQC }}</div></div></div>
           <div class="stat-card"><div class="stat-icon purple"><i class="ti ti-check"></i></div><div class="stat-body"><div class="label">After QC</div><div class="value">{{ statAfterQC }}</div></div></div>
+          <div class="stat-card" style="cursor:pointer;" @click="goPage('porekap')"><div class="stat-icon orange"><i class="ti ti-file-alert"></i></div><div class="stat-body"><div class="label">PO Belum Close</div><div class="value">{{ poBelumCloseCount }}</div></div></div>
+          <div class="stat-card" style="cursor:pointer;" @click="goPage('porekap')"><div class="stat-icon green"><i class="ti ti-file-check"></i></div><div class="stat-body"><div class="label">PO Closed</div><div class="value">{{ poClosedCount }}</div></div></div>
           <div class="stat-card"><div class="stat-icon red"><i class="ti ti-x"></i></div><div class="stat-body"><div class="label">Total Reject</div><div class="value">{{ statTotalReject }}</div></div></div>
         </div>
         <div class="card">
@@ -434,6 +139,18 @@
             </div>
           </div>
           <div class="card-body"><div class="chart-wrap"><canvas id="myChart"></canvas></div></div>
+        </div>
+        <div class="card" v-if="poBelumClose.length > 0" style="border-left:3px solid var(--warning);">
+          <div class="card-header">
+            <span class="card-title" style="color:var(--warning);"><i class="ti ti-file-alert"></i> PO Belum Close</span>
+            <span style="font-size:12px;color:var(--text-muted);cursor:pointer;" @click="goPage('porekap')">Lihat semua &rarr;</span>
+          </div>
+          <div class="card-body" style="padding-bottom:8px;">
+            <div class="alert-strip warning" v-for="po in poBelumClose" :key="po.id" style="cursor:pointer;" @click="viewPODetail(po.id); goPage('porekap');">
+              <div><div class="pn">{{ po.po_number }}</div><div class="name">{{ po.item_count }} part &middot; {{ po.po_date }}</div></div>
+              <div class="stok" :style="{color: poStatusBadge(po.status).color}">{{ poStatusBadge(po.status).label }}</div>
+            </div>
+          </div>
         </div>
         <div class="card" v-if="kritisItems.length > 0" style="border-left:3px solid var(--warning);">
           <div class="card-header"><span class="card-title" style="color:var(--warning);"><i class="ti ti-alert-triangle"></i> Stok Kritis — Perlu Restock</span></div>
@@ -457,8 +174,16 @@
 
       <!-- INPUT -->
       <div class="page" v-if="page==='input'">
+        <div class="input-tab-toggle">
+          <button class="input-tab-btn" :class="{active: inputTab==='masuk'}" @click="inputTab='masuk'">
+            <i class="ti ti-circle-plus"></i> Masuk
+          </button>
+          <button class="input-tab-btn" :class="{active: inputTab==='keluar'}" @click="inputTab='keluar'">
+            <i class="ti ti-circle-minus"></i> Keluar
+          </button>
+        </div>
         <div class="input-forms-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div class="card">
+          <div class="card" :class="{'mobile-hide': inputTab!=='masuk'}">
             <div class="card-header"><span class="card-title" style="color:var(--success);"><i class="ti ti-arrow-down-circle"></i> Input Masuk</span></div>
             <div class="card-body">
               <div class="form-section-bar bar-green"></div>
@@ -493,7 +218,7 @@
               </button>
             </div>
           </div>
-          <div class="card">
+          <div class="card" :class="{'mobile-hide': inputTab!=='keluar'}">
             <div class="card-header"><span class="card-title" style="color:var(--danger);"><i class="ti ti-arrow-up-circle"></i> Input Keluar</span></div>
             <div class="card-body">
               <div class="form-section-bar bar-red"></div>
@@ -522,7 +247,50 @@
                 </select>
               </div>
               <div class="form-group"><label class="form-label">Keterangan</label><input class="form-ctrl" type="text" v-model="keluar.keterangan" placeholder="Optional"></div>
-              <div class="form-group"><label class="form-label">Tujuan</label><input class="form-ctrl" type="text" v-model="keluar.tujuan" placeholder="Optional"></div>
+              <div class="form-group"><label class="form-label">Tujuan</label>
+                <select class="form-ctrl" v-model="keluar.tujuan">
+                  <option value="">-- Pilih Tujuan --</option>
+                  <option value="TBINA BP">TBINA BP</option>
+                  <option value="TBINA KP">TBINA KP</option>
+                  <option value="PT ITSP">PT ITSP</option>
+                  <option value="PT AHTI">PT AHTI</option>
+                  <option value="PT MMKI">PT MMKI</option>
+                  <option value="PT ADM">PT ADM</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Kategori Keluar</label>
+                <select class="form-ctrl" v-model="keluar.kategori_keluar" @change="keluar.po_id=''; keluar.po_item_id=''; keluar.keterangan_non_po=''; keluarPoItemQuery=''; poItemSuggests=[];">
+                  <option value="po">Keluar untuk PO</option>
+                  <option value="non_po">Keluar Non-PO / Internal Use</option>
+                </select>
+              </div>
+              <template v-if="keluar.kategori_keluar === 'po'">
+                <div class="form-group">
+                  <label class="form-label">No. PO</label>
+                  <select class="form-ctrl" v-model="keluar.po_id" @change="keluar.po_item_id=''; keluarPoItemQuery=''; searchPOItemSuggest();">
+                    <option value="">-- Pilih No. PO --</option>
+                    <option v-for="po in openPOList" :key="po.id" :value="po.id">{{ po.po_number }}</option>
+                  </select>
+                </div>
+                <div class="form-group suggest-wrap" v-if="keluar.po_id" style="position:relative;">
+                  <label class="form-label">Item Part (sisa)</label>
+                  <input class="form-ctrl" type="text" v-model="keluarPoItemQuery" @input="searchPOItemSuggest" @focus="searchPOItemSuggest" placeholder="Ketik part number..." autocomplete="off">
+                  <div v-if="poItemSuggests.length" style="position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:50;max-height:220px;overflow-y:auto;">
+                    <div v-for="it in poItemSuggests" :key="it.id" @click="selectPOItem(it)" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);">
+                      <b>{{ it.part_number }}</b> - sisa {{ it.qty_order - it.qty_delivered }}
+                      <div style="font-size:12px;color:var(--text-muted);">{{ it.part_name }}</div>
+                    </div>
+                  </div>
+                  <div v-if="keluar.po_item_id" style="margin-top:6px;font-size:12px;color:var(--success);">
+                    <i class="ti ti-check"></i> Terpilih: {{ selectedPOItem?.part_number }} - sisa {{ selectedPOItem ? (selectedPOItem.qty_order - selectedPOItem.qty_delivered) : 0 }}
+                  </div>
+                </div>
+              </template>
+              <div class="form-group" v-else>
+                <label class="form-label">Keterangan Non-PO *</label>
+                <input class="form-ctrl" type="text" v-model="keluar.keterangan_non_po" placeholder="Contoh: Sample customer, testing internal">
+              </div>
               <button class="btn btn-full" @click="submitKeluar" :disabled="loadingKeluar" style="background:var(--danger);color:#fff;">
                 <i class="ti ti-device-floppy"></i> {{ loadingKeluar ? 'Menyimpan...' : 'Simpan Keluar' }}
               </button>
@@ -531,18 +299,145 @@
         </div>
       </div>
 
+      <!-- INPUT PO -->
+      <div class="page" v-if="page==='po'">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i class="ti ti-file-invoice" style="color:var(--primary);"></i> Input PO Baru</span>
+            <div style="display:flex;gap:8px;">
+              <input type="file" ref="importPOFileInput" accept=".xlsx,.xls" style="display:none" @change="handleImportPOItems">
+              <button class="btn btn-outline btn-sm" @click="importPOFileInput.click()" :disabled="loadingImportPO">
+                <i class="ti ti-upload"></i> {{ loadingImportPO ? 'Membaca...' : 'Import Item dari Excel' }}
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="input-row">
+              <div class="form-group"><label class="form-label">No. PO *</label><input class="form-ctrl" type="text" v-model="newPO.po_number" placeholder="Contoh: 16.08.2026-01"></div>
+              <div class="form-group"><label class="form-label">Tanggal PO *</label><input class="form-ctrl" type="date" v-model="newPO.po_date"></div>
+            </div>
+            <div class="input-row">
+              <div class="form-group"><label class="form-label">Target Delivery</label><input class="form-ctrl" type="date" v-model="newPO.target_delivery"></div>
+              <div class="form-group"><label class="form-label">Customer ID</label><input class="form-ctrl" type="text" v-model="newPO.customer_id" placeholder="Contoh: XXX"></div>
+            </div>
+            <div style="border-top:1px solid var(--border, #e5e7eb);margin:16px 0;padding-top:12px;">
+              <div style="font-weight:700;margin-bottom:8px;">Item Part</div>
+              <div v-for="(it, idx) in newPO.items" :key="idx" class="po-item-row">
+                <div class="form-group pn" style="position:relative;"><label class="form-label">Part Number</label><input class="form-ctrl" type="text" v-model="it.part_number" @input="searchPOSuggest(idx)" placeholder="Contoh: 67796-X7A12" autocomplete="off">
+                  <div v-if="poSuggests[idx] && poSuggests[idx].length" style="position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:50;max-height:200px;overflow-y:auto;">
+                    <div v-for="s in poSuggests[idx]" :key="s.part_number" @click="selectPOPart(idx, s)" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);">
+                      <b>{{ s.part_number }}</b><div style="font-size:12px;color:var(--text-soft);">{{ s.part_name }}</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group name"><label class="form-label">Part Name</label><input class="form-ctrl" type="text" :value="it.part_name" disabled placeholder="Auto"></div>
+                <div class="form-group qty"><label class="form-label">Qty Order</label><input class="form-ctrl" type="number" v-model="it.qty_order" min="1"></div>
+                <button class="btn btn-danger-soft btn-sm btn-remove-item" @click="removePOItemRow(idx)"><i class="ti ti-x"></i></button>
+              </div>
+              <button class="btn" @click="addPOItemRow"><i class="ti ti-plus"></i> Tambah Item</button>
+            </div>
+            <button class="btn btn-full" @click="submitPO" :disabled="loadingPO" style="margin-top:16px;background:var(--success);color:#fff;">
+              <i class="ti ti-device-floppy"></i> {{ loadingPO ? 'Menyimpan...' : 'Simpan PO' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- REKAP PO -->
+      <div class="page" v-if="page==='porekap'">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i class="ti ti-list-details" style="color:var(--primary);"></i> Rekap PO</span>
+            <button class="btn btn-outline btn-sm" @click="exportPORekap" :disabled="loadingExportPO">
+              <i class="ti ti-file-spreadsheet"></i> {{ loadingExportPO ? 'Membuat...' : 'Export Excel (PO Selesai)' }}
+            </button>
+          </div>
+          <div class="card-body" style="overflow-x:auto;">
+            <table class="tbl">
+              <thead><tr><th>No. PO</th><th>Tanggal</th><th class="hide-mobile">Customer ID</th><th class="hide-mobile">Item</th><th>Status Delivery</th><th class="hide-mobile">Approval</th><th></th></tr></thead>
+              <tbody>
+                <tr v-if="poList.length === 0"><td colspan="7" class="no-data">Tidak ada data</td></tr>
+                <tr v-for="po in poList" :key="po.id" @click="viewPODetail(po.id)" style="cursor:pointer;">
+                  <td style="font-weight:700;">{{ po.po_number }}</td>
+                  <td>{{ po.po_date }}</td>
+                  <td class="hide-mobile">{{ po.customer_id || '-' }}</td>
+                  <td class="hide-mobile">{{ po.item_count }} part</td>
+                  <td><span :style="{background: poStatusBadge(po.status).bg, color: poStatusBadge(po.status).color, padding:'3px 10px', borderRadius:'6px', fontSize:'12px'}">{{ poStatusBadge(po.status).label }}</span></td>
+                  <td class="hide-mobile"><span :style="{background: poApprovalBadge(po.approval_stage).bg, color: poApprovalBadge(po.approval_stage).color, padding:'3px 10px', borderRadius:'6px', fontSize:'12px'}">{{ poApprovalBadge(po.approval_stage).label }}</span></td>
+                  <td><i class="ti ti-chevron-right"></i></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card" v-if="poDetail" style="margin-top:16px;">
+          <div class="card-header">
+            <span class="card-title">Detail PO {{ poDetail.po_number }} <span v-if="poDetail.customer_id" style="font-weight:400;color:var(--text-muted);font-size:13px;">&middot; {{ poDetail.customer_id }}</span></span>
+            <span :style="{background: poStatusBadge(poDetail.status).bg, color: poStatusBadge(poDetail.status).color, padding:'3px 10px', borderRadius:'6px', fontSize:'12px'}">{{ poStatusBadge(poDetail.status).label }}</span>
+          </div>
+          <div class="card-body" style="overflow-x:auto;">
+            <table class="tbl">
+              <thead><tr><th>Part</th><th>Nama Part</th><th>Order</th><th>Terkirim</th><th>Sisa</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr v-for="it in poDetail.items" :key="it.id">
+                  <td>{{ it.part_number }}</td>
+                        <td>{{ it.part_name }}</td>
+                  <td>{{ it.qty_order }}</td>
+                  <td>{{ it.qty_delivered }}</td>
+                  <td>{{ it.qty_order - it.qty_delivered }}</td>
+                  <td><span :style="{background: poStatusBadge(it.status).bg, color: poStatusBadge(it.status).color, padding:'3px 10px', borderRadius:'6px', fontSize:'12px'}">{{ poStatusBadge(it.status).label }}</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card-body" style="border-top:1px solid var(--border, #e5e7eb);">
+            <div style="font-weight:700;margin-bottom:12px;">Alur Approval</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <i class="ti" :class="poDetail.approval_mkt1_at ? 'ti-circle-check-filled' : 'ti-circle-dashed'" :style="{color: poDetail.approval_mkt1_at ? 'var(--success)' : 'var(--text-muted)', fontSize:'20px'}"></i>
+                <div>
+                  <div style="font-weight:600;font-size:13px;">1. Approval Marketing</div>
+                  <div style="font-size:12px;color:var(--text-muted);">{{ poDetail.approval_mkt1_at ? ('Disetujui oleh ' + poDetail.approval_mkt1_by + ' • ' + poDetail.approval_mkt1_at) : 'Menunggu' }}</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <i class="ti" :class="poDetail.approval_pcd_at ? 'ti-circle-check-filled' : 'ti-circle-dashed'" :style="{color: poDetail.approval_pcd_at ? 'var(--success)' : 'var(--text-muted)', fontSize:'20px'}"></i>
+                <div>
+                  <div style="font-weight:600;font-size:13px;">2. Approval PCD Project</div>
+                  <div style="font-size:12px;color:var(--text-muted);">{{ poDetail.approval_pcd_at ? ('Disetujui oleh ' + poDetail.approval_pcd_by + ' • ' + poDetail.approval_pcd_at) : 'Menunggu' }}</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <i class="ti" :class="poDetail.approval_mkt2_at ? 'ti-circle-check-filled' : 'ti-circle-dashed'" :style="{color: poDetail.approval_mkt2_at ? 'var(--success)' : 'var(--text-muted)', fontSize:'20px'}"></i>
+                <div>
+                  <div style="font-weight:600;font-size:13px;">3. Approval Marketing (Final)</div>
+                  <div style="font-size:12px;color:var(--text-muted);">{{ poDetail.approval_mkt2_at ? ('Disetujui oleh ' + poDetail.approval_mkt2_by + ' • ' + poDetail.approval_mkt2_at) : 'Menunggu' }}</div>
+                </div>
+              </div>
+            </div>
+            <button v-if="canApprovePO(poDetail)" class="btn btn-full" @click="approvePO(poDetail.id)" :disabled="loadingApprovePO" style="margin-top:16px;background:var(--success);color:#fff;">
+              <i class="ti ti-circle-check"></i> {{ loadingApprovePO ? 'Memproses...' : 'Approve Tahap Ini' }}
+            </button>
+            <div v-else-if="poDetail.approval_stage === 'delivery'" style="margin-top:16px;font-size:13px;color:var(--text-muted);"><i class="ti ti-info-circle"></i> Approval baru bisa mulai setelah Status Delivery jadi Closed.</div>
+            <div v-else-if="poDetail.approval_stage === 'completed'" style="margin-top:16px;font-size:13px;color:var(--success);font-weight:600;"><i class="ti ti-circle-check"></i> PO ini sudah selesai sepenuhnya.</div>
+          </div>
+        </div>
+      </div>
+
       <!-- PART LIST -->
       <div class="page" v-if="page==='partlist'">
-        <div class="card" v-if="isAdmin" style="border-left:3px solid var(--primary);">
+        <div class="card" v-if="canManage" style="border-left:3px solid var(--primary);">
           <div class="card-header"><span class="card-title"><i class="ti ti-circle-plus" style="color:var(--primary);"></i> Tambah Part Baru</span></div>
           <div class="card-body">
             <div class="input-row">
               <div class="form-group"><label class="form-label">Model</label><input class="form-ctrl" type="text" v-model="newPart.model" placeholder="Contoh: 737D"></div>
               <div class="form-group"><label class="form-label">Commodity *</label><input class="form-ctrl" type="text" v-model="newPart.commodity" placeholder="Contoh: INJECTION PART"></div>
             </div>
-            <div class="form-group"><label class="form-label">Part Name *</label><input class="form-ctrl" type="text" v-model="newPart.part_name" placeholder="Nama part lengkap"></div>
-            <div class="form-group"><label class="form-label">Part Number *</label><input class="form-ctrl" type="text" v-model="newPart.part_number" placeholder="Contoh: 71173-X7V30"></div>
-            <div class="form-group"><label class="form-label">Supplier</label><input class="form-ctrl" type="text" v-model="newPart.supplier" placeholder="Contoh: PT MAJU MUNDUR"></div>
+            <div class="input-row-3">
+              <div class="form-group"><label class="form-label">Part Name *</label><input class="form-ctrl" type="text" v-model="newPart.part_name" placeholder="Nama part lengkap"></div>
+              <div class="form-group"><label class="form-label">Part Number *</label><input class="form-ctrl" type="text" v-model="newPart.part_number" placeholder="Contoh: 71173-X7V30"></div>
+              <div class="form-group"><label class="form-label">Supplier</label><input class="form-ctrl" type="text" v-model="newPart.supplier" placeholder="Contoh: PT Sinar Jaya"></div>
+            </div>
             <div class="input-row">
               <div class="form-group"><label class="form-label">Stok Awal</label><input class="form-ctrl" type="number" v-model="newPart.stock" min="0"></div>
               <div class="form-group"><label class="form-label">Minimal Stok</label><input class="form-ctrl" type="number" v-model="newPart.min_stock" min="1"></div>
@@ -555,12 +450,19 @@
         <div class="card">
           <div class="card-header">
             <span class="card-title"><i class="ti ti-box"></i> Daftar Part</span>
-            <div style="display:flex;gap:8px;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
               <input type="file" ref="importFileInput" accept=".xlsx,.xls,.csv" style="display:none" @change="handleImportFile">
               <button class="btn btn-outline btn-sm" @click="importFileInput.click()" :disabled="loadingImport">
                 <i class="ti ti-upload"></i> {{ loadingImport ? 'Mengimport...' : 'Import Excel' }}
               </button>
               <button class="btn btn-success btn-sm" @click="exportExcelStok"><i class="ti ti-file-spreadsheet"></i> Export Excel</button>
+              <template v-if="canSeePrice">
+                <input type="file" ref="importPriceFileInput" accept=".xlsx,.xls,.csv" style="display:none" @change="handleImportPriceExcel">
+                <button class="btn btn-outline btn-sm" @click="downloadPriceTemplate"><i class="ti ti-download"></i> Template Price</button>
+                <button class="btn btn-outline btn-sm" @click="importPriceFileInput.click()" :disabled="loadingImportPrice">
+                  <i class="ti ti-upload"></i> {{ loadingImportPrice ? 'Mengimport...' : 'Import Price Excel' }}
+                </button>
+              </template>
             </div>
           </div>
           <div class="card-body" style="padding-bottom:8px;">
@@ -577,26 +479,61 @@
               <thead>
                 <tr>
                   <th class="hide-mobile">Commodity</th><th>Part Name</th><th>PN</th>
-                  <th class="hide-mobile">Model</th><th>Stok</th><th class="hide-mobile">Min</th>
+                  <th class="hide-mobile">Model</th><th class="hide-mobile">Supplier</th><th>Stok</th><th class="hide-mobile">Min</th>
                   <th class="hide-mobile">Reject</th>
-                  <th>Status</th><th v-if="isAdmin" class="hide-mobile">Aksi</th>
+                  <th>Status</th>
+                  <th v-if="canSeePrice" class="hide-mobile">Price Part</th>
+                  <th v-if="canSeePrice" class="hide-mobile">Periode Price</th>
+                  <th v-if="canSeePrice" class="hide-mobile">Tarikan Sales</th>
+                  <th v-if="canManage || canSeePrice" class="hide-mobile">Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-if="filteredParts.length === 0"><td :colspan="isAdmin ? 9 : 8" class="no-data">Tidak ada data</td></tr>
+                <tr v-if="filteredParts.length === 0"><td :colspan="partsColspan" class="no-data">Tidak ada data</td></tr>
                 <tr v-for="p in filteredParts" :key="p.id">
                   <td class="hide-mobile td-name">{{ p.commodity }}</td>
                   <td class="td-name">{{ p.part_name }}</td>
                   <td style="font-weight:700;color:var(--primary);white-space:nowrap;">{{ p.part_number }}</td>
                   <td class="hide-mobile"><span class="model-tag" v-if="p.model">{{ p.model }}</span><span v-else>-</span></td>
+                  <td class="hide-mobile">{{ p.supplier || '-' }}</td>
                   <td style="font-weight:800;text-align:center;">{{ p.stock }}</td>
                   <td class="hide-mobile">{{ p.min_stock }}</td>
                   <td class="hide-mobile" style="text-align:center;color:var(--danger);font-weight:700;">{{ p.total_reject || 0 }}</td>
                   <td><span class="badge" :class="p.stock === 0 ? 'badge-danger' : p.stock <= p.min_stock ? 'badge-warning' : 'badge-ok'">{{ p.stock === 0 ? 'HABIS' : p.stock <= p.min_stock ? 'KRITIS' : 'OK' }}</span></td>
-                  <td v-if="isAdmin" class="hide-mobile"><button class="btn btn-danger-soft btn-sm" @click="deletePart(p.id)"><i class="ti ti-trash"></i></button></td>
+                  <td v-if="canSeePrice" class="hide-mobile">{{ p.price ? formatRupiah(p.price) : '-' }}</td>
+                  <td v-if="canSeePrice" class="hide-mobile">{{ p.price_valid_from && p.price_valid_until ? formatDate(p.price_valid_from) + ' - ' + formatDate(p.price_valid_until) : '-' }}</td>
+                  <td v-if="canSeePrice" class="hide-mobile">{{ p.tarikan_sales ? formatRupiah(p.tarikan_sales) : '-' }}</td>
+                  <td v-if="canManage || canSeePrice" class="hide-mobile" style="white-space:nowrap;">
+                    <button v-if="canSeePrice" class="btn btn-outline btn-sm" @click="openPriceModal(p)" title="Update Price"><i class="ti ti-currency-dollar"></i></button>
+                    <button v-if="canManage" class="btn btn-danger-soft btn-sm" @click="deletePart(p.id)"><i class="ti ti-trash"></i></button>
+                  </td>
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- MODAL UPDATE PRICE -->
+        <div v-if="priceModal.show" class="modal-backdrop" @click.self="priceModal.show=false">
+          <div class="modal-box">
+            <div class="modal-header">
+              <span><i class="ti ti-currency-dollar" style="color:var(--primary);"></i> Update Price - {{ priceModal.part?.part_number }}</span>
+              <button class="modal-close" @click="priceModal.show=false"><i class="ti ti-x"></i></button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group"><label class="form-label">Price Part (Rp) *</label><input class="form-ctrl" type="number" min="0" v-model="priceModal.form.price" placeholder="Contoh: 15000"></div>
+              <div class="input-row">
+                <div class="form-group"><label class="form-label">Berlaku Dari *</label><input class="form-ctrl" type="date" v-model="priceModal.form.price_valid_from"></div>
+                <div class="form-group"><label class="form-label">Berlaku Sampai *</label><input class="form-ctrl" type="date" v-model="priceModal.form.price_valid_until"></div>
+              </div>
+              <div class="form-group"><label class="form-label">Tarikan Sales (Rp)</label><input class="form-ctrl" type="number" min="0" v-model="priceModal.form.tarikan_sales" placeholder="Contoh: 5000"></div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-outline" @click="priceModal.show=false">Batal</button>
+              <button class="btn btn-primary" @click="submitPriceUpdate" :disabled="priceModal.loading">
+                <i class="ti ti-device-floppy"></i> {{ priceModal.loading ? 'Menyimpan...' : 'Simpan Price' }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -611,55 +548,62 @@
                 <option value="">Semua Tipe</option><option value="masuk">Masuk</option><option value="keluar">Keluar</option>
               </select>
               <input class="form-ctrl" type="text" v-model="historyFilter.search" @input="loadHistory" placeholder="Cari PN / nama...">
-              <button class="btn btn-primary" style="white-space:nowrap;" @click="openSJModal" :disabled="selectedIds.length===0">
+              <button class="btn btn-primary" style="white-space:nowrap;" @click="openSJModal" :disabled="selectedIds.length===0" v-if="canManage">
                 <i class="ti ti-file-type-pdf"></i> Surat Jalan ({{ selectedIds.length }})
               </button>
             </div>
+          </div>
 
-            <!-- MODAL SURAT JALAN -->
-            <div v-if="sjModal.show" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:center;justify-content:center;">
-              <div class="card" style="width:360px;margin:0;">
-                <div class="card-header"><span class="card-title">Detail Surat Jalan</span></div>
-                <div class="card-body">
-                  <label style="font-size:12px;font-weight:600;">Delivery To</label>
-                  <input class="form-ctrl" style="margin:6px 0 12px;" v-model="sjModal.delivery_to" placeholder="Nama tujuan / customer">
-                  <label style="font-size:12px;font-weight:600;">Project</label>
-                  <input class="form-ctrl" style="margin:6px 0 12px;" v-model="sjModal.project" placeholder="Nama project (opsional)">
-                  <label style="font-size:12px;font-weight:600;">No. PO</label>
-                  <input class="form-ctrl" style="margin:6px 0 12px;" v-model="sjModal.no_po" placeholder="Nomor PO (opsional)">
-                  <label style="font-size:12px;font-weight:600;">Tanggal</label>
-                  <input class="form-ctrl" style="margin:6px 0 16px;" type="date" v-model="sjModal.date">
-                  <div style="display:flex;gap:8px;">
-                    <button class="btn" style="flex:1;background:var(--surface2);color:var(--text);" @click="sjModal.show=false">Batal</button>
-                    <button class="btn btn-primary" style="flex:1;" @click="submitSJModal" :disabled="sjModal.loading">
-                      {{ sjModal.loading ? 'Membuat...' : 'Download' }}
-                    </button>
-                  </div>
+          <!-- MODAL SURAT JALAN -->
+          <div v-if="sjModal.show" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:center;justify-content:center;">
+            <div class="card" style="width:380px;margin:0;max-height:90vh;overflow-y:auto;">
+              <div class="card-header"><span class="card-title">Detail Surat Jalan</span></div>
+              <div class="card-body">
+                <label style="font-size:12px;font-weight:600;">No. Surat Jalan</label>
+                <input class="form-ctrl" style="margin:6px 0 12px;" v-model="sjModal.no_surat_jalan" placeholder="Contoh: SJ-001/VIII/2026">
+                <label style="font-size:12px;font-weight:600;">Delivery To</label>
+                <input class="form-ctrl" style="margin:6px 0 12px;" v-model="sjModal.delivery_to" placeholder="Nama tujuan / customer">
+                <label style="font-size:12px;font-weight:600;">Tanggal</label>
+                <input class="form-ctrl" style="margin:6px 0 12px;" type="date" v-model="sjModal.date">
+                <label style="font-size:12px;font-weight:600;">Project</label>
+                <input class="form-ctrl" style="margin:6px 0 12px;" v-model="sjModal.project" placeholder="Nama project (opsional)">
+                <label style="font-size:12px;font-weight:600;">No. PO</label>
+                <select class="form-ctrl" style="margin:6px 0 16px;" v-model="sjModal.no_po" @focus="loadPOList">
+                  <option value="">-- Ga terikat PO --</option>
+                  <option v-for="po in poList.filter(p => p.status !== 'closed')" :key="po.id" :value="po.po_number">{{ po.po_number }}</option>
+                </select>
+                <div style="display:flex;gap:8px;">
+                  <button class="btn" style="flex:1;background:var(--surface2);color:var(--text);" @click="sjModal.show=false">Batal</button>
+                  <button class="btn btn-primary" style="flex:1;" @click="submitSJModal" :disabled="sjModal.loading">
+                    {{ sjModal.loading ? 'Membuat...' : 'Download' }}
+                  </button>
                 </div>
               </div>
             </div>
-            <!-- MODAL APPROVE QC -->
-<div v-if="qcModal.show" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:center;justify-content:center;">
-  <div class="card" style="width:360px;margin:0;">
-    <div class="card-header"><span class="card-title">Approve QC</span></div>
-    <div class="card-body">
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">
-        PN: <b>{{ qcModal.part_number }}</b> — Qty Masuk: <b>{{ qcModal.maxQty }}</b>
-      </p>
-      <label style="font-size:12px;font-weight:600;">Qty OK (lolos QC)</label>
-      <input class="form-ctrl" style="margin:6px 0 12px;" type="number" v-model="qcModal.qty_ok" :max="qcModal.maxQty" min="0">
-      <label style="font-size:12px;font-weight:600;">Keterangan Reject (opsional)</label>
-      <input class="form-ctrl" style="margin:6px 0 16px;" type="text" v-model="qcModal.keterangan_reject" placeholder="Alasan reject, kalau ada">
-      <div style="display:flex;gap:8px;">
-        <button class="btn" style="flex:1;background:var(--surface2);color:var(--text);" @click="qcModal.show=false">Batal</button>
-        <button class="btn btn-primary" style="flex:1;" @click="submitQcModal" :disabled="qcModal.loading">
-          {{ qcModal.loading ? 'Menyimpan...' : 'Approve' }}
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
           </div>
+
+          <!-- MODAL APPROVE QC -->
+          <div v-if="qcModal.show" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:center;justify-content:center;">
+            <div class="card" style="width:360px;margin:0;">
+              <div class="card-header"><span class="card-title">Approve QC</span></div>
+              <div class="card-body">
+                <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">
+                  PN: <b>{{ qcModal.part_number }}</b> — Qty Masuk: <b>{{ qcModal.maxQty }}</b>
+                </p>
+                <label style="font-size:12px;font-weight:600;">Qty OK (lolos QC)</label>
+                <input class="form-ctrl" style="margin:6px 0 12px;" type="number" v-model="qcModal.qty_ok" :max="qcModal.maxQty" min="0">
+                <label style="font-size:12px;font-weight:600;">Keterangan Reject (opsional)</label>
+                <input class="form-ctrl" style="margin:6px 0 16px;" type="text" v-model="qcModal.keterangan_reject" placeholder="Alasan reject, kalau ada">
+                <div style="display:flex;gap:8px;">
+                  <button class="btn" style="flex:1;background:var(--surface2);color:var(--text);" @click="qcModal.show=false">Batal</button>
+                  <button class="btn btn-primary" style="flex:1;" @click="submitQcModal" :disabled="qcModal.loading">
+                    {{ qcModal.loading ? 'Menyimpan...' : 'Approve' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="table-wrap">
             <table>
               <thead>
@@ -667,30 +611,107 @@
                   <th><input type="checkbox" @change="toggleSelectAll($event)" :checked="allSelected"></th>
                   <th>Tanggal</th><th>Tipe</th><th>PN</th><th>Part Name</th><th>Qty</th>
                   <th class="hide-mobile">QC</th><th class="hide-mobile">Supplier/Customer</th><th class="hide-mobile">Oleh</th>
-                  <th v-if="isAdmin" class="hide-mobile">Aksi</th><th>QC</th><th>Share</th><th>PDF</th>
+                  <th v-if="canManage" class="hide-mobile">Aksi</th><th>QC</th><th>Share</th><th>PDF</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-if="historyList.length === 0"><td :colspan="isAdmin ? 12 : 11" class="no-data">Tidak ada data</td></tr>
+                <tr v-if="historyList.length === 0"><td :colspan="canManage ? 12 : 11" class="no-data">Tidak ada data</td></tr>
                 <tr v-for="h in historyList" :key="h.id">
                   <td><input type="checkbox" :value="h.id" v-model="selectedIds"></td>
                   <td class="td-date">{{ h.date }}<br><span style="color:var(--text-muted);font-size:10px;">{{ h.time || '' }}</span></td>
                   <td><span class="badge" :class="h.type === 'masuk' ? 'badge-masuk' : 'badge-keluar'">{{ h.type }}</span></td>
                   <td style="font-weight:700;color:var(--primary);white-space:nowrap;">{{ h.part_number }}</td>
                   <td class="td-name">{{ h.part_name }}</td>
-                  <td style="font-weight:800;text-align:center;">{{ h.qty }}</td>
+                  <td style="font-weight:800;text-align:center;">{{ h.qty_ok }}</td>
                   <td class="hide-mobile" style="font-size:11px;">{{ h.status_qc || '-' }}</td>
                   <td class="hide-mobile" style="font-size:11px;">{{ h.type === 'masuk' ? (h.supplier || '-') : (h.tujuan || '-') }}</td>
                   <td class="hide-mobile" style="font-size:11px;color:var(--primary);font-weight:600;">{{ h.input_by || '-' }}</td>
-                  <td v-if="isAdmin" class="hide-mobile"><button class="btn btn-danger-soft btn-sm" @click="deleteHistory(h.id)"><i class="ti ti-trash"></i></button></td>
+                  <td v-if="canManage" class="hide-mobile"><button class="btn btn-danger-soft btn-sm" @click="deleteHistory(h.id)"><i class="ti ti-trash"></i></button></td>
                   <td>
-                      <button v-if="h.type === 'masuk' && h.status_qc === 'Before Check QC'" class="btn btn-outline btn-sm" @click="openQcModal(h)" title="Approve QC">
-                        <i class="ti ti-clipboard-check"></i>
-                      </button>
-                      <span v-else style="color:var(--text-muted);">—</span>
+                    <button v-if="h.type === 'masuk' && h.status_qc === 'Before Check QC'" class="btn btn-outline btn-sm" @click="openQcModal(h)" title="Approve QC">
+                      <i class="ti ti-clipboard-check"></i>
+                    </button>
+                    <span v-else style="color:var(--text-muted);">—</span>
                   </td>
                   <td><button class="btn btn-wa btn-sm" @click="shareWA(h)" title="Share ke WhatsApp"><i class="ti ti-brand-whatsapp"></i></button></td>
-                  <td><button class="btn btn-pdf btn-sm" @click="quickDownloadSJ(h)" title="Download Surat Jalan"><i class="ti ti-file-type-pdf"></i></button></td>
+                  <td>
+                    <button v-if="canManage" class="btn btn-pdf btn-sm" @click="quickDownloadSJ(h)" title="Download Surat Jalan"><i class="ti ti-file-type-pdf"></i></button>
+                    <span v-else style="color:var(--text-muted);">—</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTORY SURAT JALAN -->
+      <div class="page" v-if="page==='sjhistory'">
+        <div class="card">
+          <div class="card-header"><span class="card-title"><i class="ti ti-truck-delivery"></i> History Surat Jalan</span></div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr><th>No. SJ</th><th>Delivery To</th><th>Tanggal</th><th class="hide-mobile">Project</th><th class="hide-mobile">No. PO</th><th>Item</th><th class="hide-mobile">Dibuat Oleh</th><th>Aksi</th></tr>
+              </thead>
+              <tbody>
+                <tr v-if="!loadingSJHistory && sjHistory.length === 0"><td colspan="8" class="no-data">Belum ada surat jalan yang pernah dibuat</td></tr>
+                <tr v-for="sj in sjHistory" :key="sj.id">
+                  <td style="font-weight:700;">{{ sj.no_surat_jalan || '-' }}</td>
+                  <td>{{ sj.delivery_to || '-' }}</td>
+                  <td style="white-space:nowrap;">{{ formatDate(sj.date) }}</td>
+                  <td class="hide-mobile">{{ sj.project || '-' }}</td>
+                  <td class="hide-mobile">{{ sj.no_po || '-' }}</td>
+                  <td style="text-align:center;">{{ sj.item_count }}</td>
+                  <td class="hide-mobile">{{ sj.created_by }}</td>
+                  <td>
+                    <button class="btn btn-outline btn-sm" @click="downloadSJAgain(sj.id)" title="Download ulang">
+                      <i class="ti ti-download"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- AUDIT TRAIL -->
+      <div class="page" v-if="page==='auditlog'">
+        <div class="card">
+          <div class="card-header"><span class="card-title"><i class="ti ti-shield-lock"></i> Audit Trail</span></div>
+          <div class="card-body" style="padding-bottom:8px;">
+            <div class="filter-row">
+              <select class="form-ctrl" v-model="auditFilter.action" @change="loadActivityLogs" style="max-width:160px;">
+                <option value="">Semua Aksi</option>
+                <option value="create">Create</option>
+                <option value="update_price">Update Price</option>
+                <option value="import_price">Import Price</option>
+                <option value="import">Import</option>
+                <option value="delete">Delete</option>
+                <option value="approve">Approve</option>
+              </select>
+              <button class="btn btn-outline btn-sm" @click="loadActivityLogs" :disabled="loadingAuditLogs">
+                <i class="ti ti-refresh"></i> Refresh
+              </button>
+              <button class="btn btn-success btn-sm" @click="exportAuditExcel" :disabled="loadingExportAudit">
+                <i class="ti ti-file-spreadsheet"></i> {{ loadingExportAudit ? 'Menyiapkan...' : 'Export Excel' }}
+              </button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr><th>Waktu</th><th>User</th><th>Role</th><th>Aksi</th><th>Deskripsi</th></tr>
+              </thead>
+              <tbody>
+                <tr v-if="!loadingAuditLogs && activityLogs.length === 0"><td colspan="5" class="no-data">Belum ada aktivitas tercatat</td></tr>
+                <tr v-for="log in activityLogs" :key="log.id">
+                  <td style="white-space:nowrap;">{{ formatDateTime(log.created_at) }}</td>
+                  <td>{{ log.user_name || '-' }}</td>
+                  <td><span class="badge badge-ok" style="text-transform:capitalize;">{{ log.role || '-' }}</span></td>
+                  <td><span class="badge" style="text-transform:capitalize;">{{ log.action }}</span></td>
+                  <td>{{ log.description }}</td>
                 </tr>
               </tbody>
             </table>
@@ -704,7 +725,8 @@
     <nav class="mobile-nav">
       <div class="mobile-nav-inner">
         <div class="nav-tab" :class="{active: page==='dashboard'}" @click="goPage('dashboard')"><i class="ti ti-layout-dashboard"></i><span>Dashboard</span></div>
-        <div class="nav-tab" :class="{active: page==='input'}" @click="goPage('input')" v-if="isAdmin"><i class="ti ti-circle-plus"></i><span>Input</span></div>
+        <div class="nav-tab" :class="{active: page==='input'}" @click="goPage('input')" v-if="canManage"><i class="ti ti-circle-plus"></i><span>Input</span></div>
+        <div class="nav-tab" :class="{active: page==='porekap'}" @click="goPage('porekap')" v-if="isPcd || isAdmin"><i class="ti ti-list-details"></i><span>Rekap PO</span></div>
         <div class="nav-tab" :class="{active: page==='partlist'}" @click="goPage('partlist')"><i class="ti ti-box"></i><span>Part</span></div>
         <div class="nav-tab" :class="{active: page==='history'}" @click="goPage('history')"><i class="ti ti-history"></i><span>History</span></div>
       </div>
@@ -713,387 +735,6 @@
   </div>
 </div>
 
-<script>
-const { createApp, ref, computed, onMounted, nextTick } = Vue;
-
-createApp({
-  setup() {
-    // Cek auth — kalau tidak ada token, redirect ke login
-    const token = ref(localStorage.getItem('token') || null);
-    const currentUser = ref(JSON.parse(localStorage.getItem('currentUser') || 'null'));
-
-    if (!token.value || !currentUser.value) {
-      window.location.href = 'login.html';
-      return {};
-    }
-
-    const isDark = ref(localStorage.getItem('theme') === 'dark');
-    const page = ref('dashboard');
-    const partsList = ref([]);
-    const historyList = ref([]);
-    const selectedIds = ref([]);
-    const sjModal = ref({ show: false, delivery_to: '', project: '', no_po: '', date: '', loading: false });
-    const qcModal = ref({ show: false, id: null, part_number: '', maxQty: 0, qty_ok: 0, keterangan_reject: '', loading: false });
-    const allSelected = computed(() => historyList.value.length > 0 && selectedIds.value.length === historyList.value.length);
-    const chartInstance = ref(null);
-    const toast = ref({ show: false, msg: '', type: 'success' });
-    let toastTimer = null;
-
-    function showToast(msg, type = 'success') {
-      if (toastTimer) clearTimeout(toastTimer);
-      toast.value = { show: true, msg, type };
-      toastTimer = setTimeout(() => toast.value.show = false, 3000);
-    }
-
-    const today = () => new Date().toISOString().split('T')[0];
-    const masuk = ref({ pn: '', model: '', commodity: '', part_name: '', qty: '', date: today(), status_qc: '', keterangan: '', supplier: '' });
-    const keluar = ref({ pn: '', model: '', commodity: '', part_name: '', qty: '', date: today(), status_qc: '', keterangan: '', tujuan: '' });
-    const suggests = ref({ masuk: [], keluar: [] });
-    const loadingMasuk = ref(false);
-    const loadingKeluar = ref(false);
-    const newPart = ref({ model: '', commodity: '', part_name: '', part_number: '', supplier: '', stock: 0, min_stock: 1 });
-    const importFileInput = ref(null);
-    const loadingImport = ref(false);
-    const loadingNewPart = ref(false);
-    const partSearch = ref('');
-    const partModelFilter = ref('');
-    const historyFilter = ref({ type: '', search: '' });
-    const timeStr = ref('');
-    const dateStr = ref('');
-    const statBeforeQC = ref(0);
-    const statAfterQC = ref(0);
-
-    function updateTime() {
-      const now = new Date();
-      timeStr.value = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      dateStr.value = now.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' });
-    }
-    setInterval(updateTime, 1000);
-    updateTime();
-
-    const isAdmin = computed(() => currentUser.value?.role === 'admin');
-    const statOk = computed(() => partsList.value.filter(p => p.stock > p.min_stock).length);
-    const statCrit = computed(() => partsList.value.filter(p => p.stock <= p.min_stock && p.stock > 0).length);
-    const statEmpty = computed(() => partsList.value.filter(p => p.stock === 0).length);
-    const statTotalReject = computed(() => partsList.value.reduce((sum, p) => sum + (p.total_reject || 0), 0));
-    const kritisItems = computed(() => partsList.value.filter(p => p.stock <= p.min_stock && p.stock > 0));
-    const habisItems = computed(() => partsList.value.filter(p => p.stock === 0));
-    const partModels = computed(() => [...new Set(partsList.value.map(p => p.model).filter(Boolean))].sort());
-    const filteredParts = computed(() => {
-      const s = partSearch.value.toLowerCase();
-      const m = partModelFilter.value.toLowerCase();
-      return partsList.value.filter(p =>
-        (!s || p.part_number.toLowerCase().includes(s) || p.part_name.toLowerCase().includes(s)) &&
-        (!m || (p.model || '').toLowerCase() === m)
-      );
-    });
-    const pageTitle = computed(() => ({ dashboard: 'Dashboard', input: 'Input Transaksi', partlist: 'Daftar Part', history: 'History Transaksi' })[page.value] || '');
-    const greeting = computed(() => {
-      const h = new Date().getHours();
-      return h < 11 ? 'Selamat Pagi' : h < 15 ? 'Selamat Siang' : h < 19 ? 'Selamat Sore' : 'Selamat Malam';
-    });
-
-    function applyTheme() { document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : ''); }
-    function toggleTheme() { isDark.value = !isDark.value; localStorage.setItem('theme', isDark.value ? 'dark' : ''); applyTheme(); }
-    applyTheme();
-
-    async function apiFetch(endpoint, options = {}) {
-      const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
-      if (token.value) headers['Authorization'] = 'Bearer ' + token.value;
-      const res = await fetch(API_URL + endpoint, { ...options, headers });
-      if (res.status === 401) { logout(); return; }
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Error ' + res.status);
-      return data;
-    }
-
-    function logout() {
-      if (token.value) apiFetch('/auth/logout', { method: 'POST' }).catch(() => {});
-      localStorage.removeItem('token');
-      localStorage.removeItem('currentUser');
-      window.location.href = 'login.php';
-    }
-
-    async function loadAll() { await loadParts(); await loadDashboard(); }
-
-    async function loadParts() {
-      try { partsList.value = await apiFetch('/parts'); }
-      catch (err) { showToast('Gagal load parts: ' + err.message, 'error'); }
-    }
-
-    async function loadDashboard() {
-      try {
-        const hist = await apiFetch('/transactions');
-        let bqc = 0, aqcMasuk = 0, keluarTotal = 0;
-        hist.forEach(h => {
-          if (h.type === 'masuk' && h.status_qc === 'Before Check QC') bqc += h.qty;
-          if (h.type === 'masuk' && h.status_qc === 'After Check QC') aqcMasuk += (h.qty_ok ?? h.qty);
-          if (h.type === 'keluar') keluarTotal += h.qty;
-        });
-        statBeforeQC.value = bqc;
-        statAfterQC.value = Math.max(aqcMasuk - keluarTotal, 0);
-      } catch {}
-      await loadChart();
-    }
-
-    async function loadChart() {
-      try {
-        const chartData = await apiFetch('/transactions/chart');
-        await nextTick();
-        const canvas = document.getElementById('myChart');
-        if (!canvas) return;
-        if (chartInstance.value) chartInstance.value.destroy();
-        const labels = chartData.map(d => new Date(d.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }));
-        chartInstance.value = new Chart(canvas, {
-          type: 'bar',
-          data: {
-            labels,
-            datasets: [
-              { label: 'Masuk', data: chartData.map(d => d.masuk), backgroundColor: 'rgba(47,179,68,0.8)', borderRadius: 6, borderSkipped: false },
-              { label: 'Keluar', data: chartData.map(d => d.keluar), backgroundColor: 'rgba(214,57,57,0.8)', borderRadius: 6, borderSkipped: false }
-            ]
-          },
-          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#8892a4', font: { size: 11 } } }, y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#8892a4', font: { size: 11 } } } } }
-        });
-      } catch {}
-    }
-
-    async function loadHistory() {
-      try {
-        const params = new URLSearchParams();
-        if (historyFilter.value.type) params.append('type', historyFilter.value.type);
-        if (historyFilter.value.search) params.append('search', historyFilter.value.search);
-        historyList.value = await apiFetch('/transactions?' + params.toString());
-      } catch (err) { showToast('Gagal load history: ' + err.message, 'error'); }
-    }
-
-    function goPage(p) {
-      if (p === 'input' && !isAdmin.value) { showToast('Hanya admin yang bisa input transaksi!', 'error'); return; }
-      page.value = p;
-      if (p === 'history') loadHistory();
-      if (p === 'dashboard') nextTick(() => loadChart());
-    }
-
-    function searchSuggest(type) {
-      const q = (type === 'masuk' ? masuk.value.pn : keluar.value.pn).toLowerCase();
-      if (!q) { suggests.value[type] = []; return; }
-      suggests.value[type] = partsList.value.filter(p => p.part_number.toLowerCase().includes(q) || p.part_name.toLowerCase().includes(q)).slice(0, 10);
-    }
-
-    function selectPart(type, part) {
-      if (type === 'masuk') { masuk.value.pn = part.part_number; masuk.value.model = part.model || ''; masuk.value.commodity = part.commodity; masuk.value.part_name = part.part_name; masuk.value.supplier = part.supplier || ''; suggests.value.masuk = []; }
-      else { keluar.value.pn = part.part_number; keluar.value.model = part.model || ''; keluar.value.commodity = part.commodity; keluar.value.part_name = part.part_name; suggests.value.keluar = []; }
-    }
-
-    async function submitMasuk() {
-      loadingMasuk.value = true;
-      try {
-        await apiFetch('/transactions', { method: 'POST', body: JSON.stringify({ part_number: masuk.value.pn, type: 'masuk', qty: parseInt(masuk.value.qty), date: masuk.value.date, status_qc: masuk.value.status_qc, keterangan: masuk.value.keterangan || null, supplier: masuk.value.supplier || null }) });
-        showToast('Transaksi masuk berhasil disimpan!');
-        masuk.value = { pn: '', model: '', commodity: '', part_name: '', qty: '', date: today(), status_qc: '', keterangan: '', supplier: '' };
-        await loadParts(); loadDashboard();
-      } catch (err) { showToast(err.message, 'error'); }
-      finally { loadingMasuk.value = false; }
-    }
-
-    async function submitKeluar() {
-      loadingKeluar.value = true;
-      try {
-        await apiFetch('/transactions', { method: 'POST', body: JSON.stringify({ part_number: keluar.value.pn, type: 'keluar', qty: parseInt(keluar.value.qty), date: keluar.value.date, status_qc: keluar.value.status_qc, keterangan: keluar.value.keterangan || null, tujuan: keluar.value.tujuan || null }) });
-        showToast('Transaksi keluar berhasil disimpan!');
-        keluar.value = { pn: '', model: '', commodity: '', part_name: '', qty: '', date: today(), status_qc: '', keterangan: '', tujuan: '' };
-        await loadParts(); loadDashboard();
-      } catch (err) { showToast(err.message, 'error'); }
-      finally { loadingKeluar.value = false; }
-    }
-
-    async function submitTambahPart() {
-      loadingNewPart.value = true;
-      try {
-        await apiFetch('/parts', { method: 'POST', body: JSON.stringify({ model: newPart.value.model || null, commodity: newPart.value.commodity, part_name: newPart.value.part_name, part_number: newPart.value.part_number, supplier: newPart.value.supplier || null, stock: parseInt(newPart.value.stock) || 0, min_stock: parseInt(newPart.value.min_stock) || 1 }) });
-        showToast('Part berhasil ditambahkan!');
-        newPart.value = { model: '', commodity: '', part_name: '', part_number: '', supplier: '', stock: 0, min_stock: 1 };
-        await loadParts(); loadDashboard();
-      } catch (err) { showToast(err.message, 'error'); }
-      finally { loadingNewPart.value = false; }
-    }
-
-    async function handleImportFile(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      loadingImport.value = true;
-      const formData = new FormData();
-      formData.append('file', file);
-
-      try {
-        const headers = {};
-        if (token.value) headers['Authorization'] = 'Bearer ' + token.value;
-        const res = await fetch(API_URL + '/parts/import', { method: 'POST', headers, body: formData });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Import gagal');
-        showToast(data.message || 'Import berhasil!');
-        await loadParts(); loadDashboard();
-      } catch (err) {
-        showToast(err.message, 'error');
-      } finally {
-        loadingImport.value = false;
-        e.target.value = '';
-      }
-    }
-
-    async function deletePart(id) {
-      if (!confirm('Hapus part ini?')) return;
-      try { await apiFetch('/parts/' + id, { method: 'DELETE' }); showToast('Part dihapus'); await loadParts(); loadDashboard(); }
-      catch (err) { showToast(err.message, 'error'); }
-    }
-
-    async function deleteHistory(id) {
-      if (!confirm('Hapus transaksi ini?')) return;
-      try { await apiFetch('/transactions/' + id, { method: 'DELETE' }); showToast('Transaksi dihapus'); await loadParts(); loadHistory(); loadDashboard(); }
-      catch (err) { showToast(err.message, 'error'); }
-    }
-
-    async function exportCSV() {
-      try {
-        const hist = await apiFetch('/transactions');
-        let csv = 'Tanggal,Tipe,PN,Name,Qty,Qty OK,Reject,Ket Reject,Status QC,Ket\n';
-        hist.forEach(h => { const ket = h.type === 'masuk' ? (h.supplier || '-') : (h.tujuan || '-'); const qtyOk = h.qty_ok ?? h.qty; const reject = h.status_qc === 'After Check QC' ? (h.qty - qtyOk) : 0; csv += `${h.date},${h.type},${h.part_number},${h.part_name},${h.qty},${qtyOk},${reject},"${h.keterangan_reject || '-'}","${h.status_qc}","${ket}"\n`; });
-        const b = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const l = document.createElement('a'); l.href = URL.createObjectURL(b); l.download = 'stok-' + new Date().toISOString().split('T')[0] + '.csv'; l.click();
-      } catch (err) { showToast('Gagal export: ' + err.message, 'error'); }
-    }
-
-    function exportExcelStok() {
-      try {
-        if (!partsList.value.length) { showToast('Data part kosong!', 'error'); return; }
-        const data = partsList.value.map(p => ({ 'Model': p.model || '-', 'Commodity': p.commodity, 'Part Name': p.part_name, 'Part Number': p.part_number, 'Supplier': p.supplier || '-', 'Sisa Stok': p.stock, 'Minimal Stok': p.min_stock, 'Reject': p.total_reject || 0, 'Status': p.stock === 0 ? 'HABIS' : p.stock <= p.min_stock ? 'KRITIS' : 'OK' }));
-        const ws = XLSX.utils.json_to_sheet(data);
-        ws['!cols'] = [{ wch:10 },{ wch:20 },{ wch:45 },{ wch:20 },{ wch:22 },{ wch:12 },{ wch:14 },{ wch:10 },{ wch:10 }];
-        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Stok Part');
-        XLSX.writeFile(wb, `rekap-stok-${new Date().toISOString().split('T')[0]}.xlsx`);
-        showToast('Excel berhasil didownload!');
-      } catch (err) { showToast('Gagal export: ' + err.message, 'error'); }
-    }
-
-    function toggleSelectAll(e) {
-      selectedIds.value = e.target.checked ? historyList.value.map(h => h.id) : [];
-    }
-
-    function openSJModal() {
-      sjModal.value = { show: true, delivery_to: '', project: '', no_po: '', date: today(), loading: false };
-    }
-
-    function openQcModal(h) {
-  qcModal.value = { show: true, id: h.id, part_number: h.part_number, maxQty: h.qty, qty_ok: h.qty, keterangan_reject: '', loading: false };
-}
-
-async function submitQcModal() {
-  qcModal.value.loading = true;
-  try {
-    await apiFetch('/transactions/' + qcModal.value.id + '/approve-qc', {
-      method: 'POST',
-      body: JSON.stringify({
-        qty_ok: parseInt(qcModal.value.qty_ok) || 0,
-        keterangan_reject: qcModal.value.keterangan_reject || null,
-      }),
-    });
-    showToast('QC berhasil di-approve!');
-    qcModal.value.show = false;
-    await loadHistory();
-    await loadParts();
-    loadDashboard();
-  } catch (err) {
-    showToast(err.message, 'error');
-  } finally {
-    qcModal.value.loading = false;
-  }
-}
-
-    async function downloadSJ(ids, opts = {}) {
-      try {
-        const res = await fetch(API_URL + '/surat-jalan', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer ' + token.value },
-          body: JSON.stringify({
-            ids,
-            delivery_to: opts.delivery_to || '',
-            date:        opts.date || '',
-            project:     opts.project || '',
-            no_po:       opts.no_po || '',
-          })
-        });
-        if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.message || 'Gagal generate PDF'); }
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = 'surat-jalan-' + Date.now() + '.pdf'; a.click();
-        URL.revokeObjectURL(url);
-      } catch (err) { showToast(err.message, 'error'); }
-    }
-
-    async function submitSJModal() {
-      sjModal.value.loading = true;
-      await downloadSJ(selectedIds.value, {
-        delivery_to: sjModal.value.delivery_to,
-        date:        sjModal.value.date,
-        project:     sjModal.value.project,
-        no_po:       sjModal.value.no_po,
-      });
-      sjModal.value.loading = false;
-      sjModal.value.show = false;
-      selectedIds.value = [];
-    }
-
-    async function quickDownloadSJ(h) {
-      await downloadSJ([h.id], { date: h.date });
-    }
-
-    function shareWA(h) {
-      const tipe = h.type === 'masuk' ? '📥 *BARANG MASUK*' : '📤 *BARANG KELUAR/DELIVERY*';
-      const time = h.time ? ' ' + h.time : '';
-
-      const lines = [
-        tipe,
-        '━━━━━━━━━━━━━━━━━━',
-        '🔢 PN        : ' + h.part_number,
-        '📝 Nama      : ' + h.part_name,
-        h.model ? '🏷️ Model     : ' + h.model : null,
-        h.commodity ? '🧩 Commodity : ' + h.commodity : null,
-        '📦 Qty       : ' + h.qty + ' pcs',
-        '📅 Tgl       : ' + h.date + time,
-        h.type === 'masuk'
-          ? (h.supplier ? '🏭 Supplier  : ' + h.supplier : null)
-          : (h.tujuan ? '🎯 Tujuan    : ' + h.tujuan : null),
-        h.status_qc ? '✅ QC        : ' + h.status_qc : null,
-        h.keterangan ? '📌 Ket       : ' + h.keterangan : null,
-        h.input_by ? '👤 By        : ' + h.input_by : null,
-        '━━━━━━━━━━━━━━━━━━',
-        '_System Control Stock New Project_',
-      ];
-
-      const msg = lines.filter(Boolean).join('\n');
-      window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
-    }
-
-    onMounted(() => { masuk.value.date = today(); keluar.value.date = today(); loadAll(); });
-
-    return {
-      token, currentUser, isDark, page, partsList, historyList, toast,
-      masuk, keluar, suggests, loadingMasuk, loadingKeluar,
-      newPart, loadingNewPart, partSearch, partModelFilter, historyFilter,
-      importFileInput, loadingImport, handleImportFile,
-      timeStr, dateStr, statBeforeQC, statAfterQC,
-      isAdmin, statOk, statCrit, statEmpty, statTotalReject, kritisItems, habisItems,
-      partModels, filteredParts, pageTitle, greeting,
-      logout, toggleTheme, goPage, searchSuggest, selectPart,
-      submitMasuk, submitKeluar, submitTambahPart,
-      deletePart, deleteHistory, exportCSV, exportExcelStok, loadHistory, shareWA,
-      selectedIds, sjModal, allSelected, toggleSelectAll, openSJModal, submitSJModal, quickDownloadSJ,
-      qcModal, openQcModal, submitQcModal,
-    };
-  }
-}).mount('#app');
-</script>
+<script type="module" src="js/main.js?v=3"></script>
 </body>
 </html>
