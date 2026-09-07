@@ -59,7 +59,7 @@ PW=\$(grep '^DB_PASSWORD=' .env | cut -d= -f2- | tr -d '"'"'"'"')
 mysqldump -u"\$US" -p"\$PW" "\$DB" > $BACKUP_PATH/db-$STAMP.sql
 tail -1 $BACKUP_PATH/db-$STAMP.sql | grep -q 'Dump completed' || { echo 'dump tidak selesai'; exit 1; }
 echo "   db-$STAMP.sql (\$(du -h $BACKUP_PATH/db-$STAMP.sql | cut -f1))"
-tar czf $BACKUP_PATH/app-$STAMP.tar.gz --exclude=vendor -C $APP_PATH .
+tar czf $BACKUP_PATH/app-$STAMP.tar.gz --exclude=vendor --exclude=daylistock-deploy.zip --exclude='storage/logs/*' -C $APP_PATH .
 echo "   app-$STAMP.tar.gz (\$(du -h $BACKUP_PATH/app-$STAMP.tar.gz | cut -f1))"
 EOF
 
