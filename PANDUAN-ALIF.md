@@ -11,7 +11,12 @@ backup, migrasi, dan verifikasi.
 ## A. SEKALI SAJA — samakan laptop dengan main
 
 Laptopmu masih di branch `fitur-po-agustus`. Pekerjaanmu sudah digabung ke
-`main`, tapi setelah itu ada beberapa perubahan lagi yang belum kamu punya.
+`main` dan sudah jalan di server produksi — tapi **itu tidak mengubah apa pun
+di laptopmu**. Git tidak mengirim perubahan turun ke komputermu; kamu yang
+harus menariknya.
+
+Setelah penggabungan itu ada 14 file yang berubah di `main`. Kalau kamu lanjut
+menulis kode dari salinan lama, perubahan itu akan terhapus lagi saat di-push.
 **Lakukan ini dulu sebelum menulis kode baru.**
 
 ### 1. Amankan yang belum sempat di-commit
@@ -38,20 +43,17 @@ git reset --hard origin/main
 
 `.env` dan `vendor/` tidak terhapus — keduanya di-gitignore.
 
-### 3. Samakan dependency dan database
+### 3. Bersihkan cache lalu cek jalan
 
 ```bash
-composer install
-php artisan migrate
 php artisan config:clear
 php artisan view:clear
-```
-
-### 4. Cek jalan
-
-```bash
 php artisan serve
 ```
+
+Tidak perlu `composer install` maupun `php artisan migrate` untuk langkah ini
+— sudah dicek, `composer.lock` sama persis dan tidak ada migration baru sejak
+branch-mu. Package dan struktur database di laptopmu sudah cocok.
 
 Mulai sekarang, kerja selalu dari `main`. Branch lama boleh dihapus:
 
