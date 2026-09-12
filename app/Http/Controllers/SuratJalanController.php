@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Po;
 use App\Models\SuratJalan;
 use App\Models\Transaction;
 use App\Services\ActivityLogger;
@@ -42,7 +43,7 @@ class SuratJalanController extends Controller
         // ===== NOMOR SURAT JALAN =====
         // Posisi udah pas masuk kotak "NO :" - tweak halus biar center & ga mepet kanan.
         $pdf->SetFont('Helvetica', 'B', 12);
-        $pdf->SetXY(270, 114);
+        $pdf->SetXY(300, 113);
         $pdf->Cell(150, 16, $request->no_surat_jalan ?: '-');
         $pdf->SetFont('Helvetica', '', 9);
 
@@ -167,6 +168,34 @@ class SuratJalanController extends Controller
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
+
+    // GET /po/{id}/pending-surat-jalan -> transaksi keluar buat PO ini yang belum pernah
+    // dibikinin surat jalan sama sekali (dipake tombol "Buat Surat Jalan" di Rekap PO)
+    public function pendingForPo($poId)
+    {
+        $po = Po::with('items')->findOrFail($poId);
+        $poItemIds = $po->items->pluck('id');
+
+        $transactionIds = Transaction::whereIn('po_item_id', $poItemIds)
+            ->where('type', 'keluar')
+            ->pluck('id');
+
+        // Kumpulin semua id transaksi yang udah pernah kepake di surat jalan manapun
+        $usedIds = SuratJalan::pluck('transaction_ids')
+            ->filter()
+            ->flatten()
+            ->unique()
+            ->values();
+
+        $pendingIds = $transactionIds->diff($usedIds)->values();
+
+        return response()->json([
+            'po_number'       => $po->po_number,
+            'transaction_ids' => $pendingIds,
+            'count'           => $pendingIds->count(),
+        ]);
+    }
+
 
     // Bantu hitung berapa baris yang dibutuhin sebuah teks kalau di-wrap di lebar tertentu,
     // biar kita bisa nentuin tinggi baris berikutnya sebelum benar-benar digambar.

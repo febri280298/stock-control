@@ -232,7 +232,7 @@
 <body>
 
 <script>
-  const API_URL = 'http://192.168.1.5/stock-control/public/api';
+  const API_URL = 'http://192.168.1.13/stock-control/public/api';
 </script>
 
 <div id="app">

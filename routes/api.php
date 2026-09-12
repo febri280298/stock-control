@@ -26,6 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/transactions', [TransactionController::class, 'store']);
     Route::post('/transactions/{id}/approve-qc', [TransactionController::class, 'approveQc']);
     Route::post('/surat-jalan', [SuratJalanController::class, 'generate']);
+    Route::get('/po/{id}/pending-surat-jalan', [SuratJalanController::class, 'pendingForPo']);
 
     // Khusus admin & pcd -> kelola master data part (nambah, hapus, import part baru)
     Route::middleware('role:admin,pcd')->group(function () {
@@ -40,6 +41,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/parts/{id}/price', [PartController::class, 'updatePrice']);
         Route::post('/parts/import-price', [PartController::class, 'importPrice']);
         Route::post('/po', [PoController::class, 'store']);
+        Route::post('/po/{id}/items', [PoController::class, 'addItem']);
+        Route::delete('/po/{id}/items/{itemId}', [PoController::class, 'removeItem']);
     });
 
     // approve() ga dipasangin middleware role di sini, karena role yang diizinkan

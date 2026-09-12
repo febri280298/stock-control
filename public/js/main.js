@@ -1,6 +1,6 @@
 import { createApp, ref, computed, onMounted, nextTick } from 'vue';
 
-const API_URL = 'http://192.168.1.5/stock-control/public/api';
+const API_URL = 'http://192.168.1.13/stock-control/public/api';
 
 createApp({
   setup() {
@@ -36,6 +36,7 @@ createApp({
     const historyList = ref([]);
     const selectedIds = ref([]);
     const sjModal = ref({ show: false, delivery_to: '', date: '', no_surat_jalan: '', project: '', no_po: '', loading: false });
+    const sjPreview = ref({ show: false, url: '', loading: false });
     const allSelected = computed(() => historyList.value.length > 0 && selectedIds.value.length === historyList.value.length);
     const importFileInput = ref(null);
     const loadingImport = ref(false);
@@ -65,7 +66,7 @@ createApp({
     const poList = ref([]);
     const poDetail = ref(null);
     const loadingPO = ref(false);
-    const newPO = ref({ po_number: '', po_date: today(), customer_id: '', target_delivery: '', items: [{ part_number: '', part_name: '', qty_order: '' }] });
+    const newPO = ref({ po_number: '', po_date: today(), customer_id: '', target_delivery: '', project: '', items: [{ part_number: '', part_name: '', qty_order: '' }] });
     const poItemsForSelectedPO = computed(() => {
       const po = openPOList.value.find(p => p.id == keluar.value.po_id);
       return po ? po.items.filter(it => it.status !== 'closed') : [];
@@ -90,6 +91,7 @@ createApp({
     const loadingNewPart = ref(false);
     const partSearch = ref('');
     const partModelFilter = ref('');
+    const partCommodityFilter = ref('');
     const historyFilter = ref({ type: '', search: '' });
     const timeStr = ref('');
     const dateStr = ref('');
@@ -119,12 +121,15 @@ createApp({
     const kritisItems = computed(() => partsList.value.filter(p => p.stock <= p.min_stock && p.stock > 0));
     const habisItems = computed(() => partsList.value.filter(p => p.stock === 0));
     const partModels = computed(() => [...new Set(partsList.value.map(p => p.model).filter(Boolean))].sort());
+    const partCommodities = computed(() => [...new Set(partsList.value.map(p => p.commodity).filter(Boolean))].sort());
     const filteredParts = computed(() => {
       const s = partSearch.value.toLowerCase();
       const m = partModelFilter.value.toLowerCase();
+      const c = partCommodityFilter.value.toLowerCase();
       return partsList.value.filter(p =>
-        (!s || p.part_number.toLowerCase().includes(s) || p.part_name.toLowerCase().includes(s)) &&
-        (!m || (p.model || '').toLowerCase() === m)
+        (!s || p.part_number.toLowerCase().includes(s) || p.part_name.toLowerCase().includes(s) || (p.commodity || '').toLowerCase().includes(s)) &&
+        (!m || (p.model || '').toLowerCase() === m) &&
+        (!c || (p.commodity || '').toLowerCase() === c)
       );
     });
     const pageTitle = computed(() => ({ dashboard: 'Dashboard', input: 'Input Transaksi', po: 'Input PO', porekap: 'Rekap PO', partlist: 'Daftar Part', history: 'History Transaksi', sjhistory: 'History Surat Jalan', auditlog: 'Audit Trail' })[page.value] || '');
@@ -277,6 +282,8 @@ createApp({
       if (p === 'auditlog' && !isAdmin.value) { showToast('Hanya admin yang bisa lihat audit trail!', 'error'); return; }
       if (p === 'sjhistory' && !isAdmin.value && !isPcd.value) { showToast('Hanya admin/pcd yang bisa lihat history surat jalan!', 'error'); return; }
       page.value = p;
+      window.scrollTo(0, 0);
+      document.querySelector('.main')?.scrollTo(0, 0);
       if (p === 'history') loadHistory();
       if (p === 'dashboard') nextTick(() => loadChart());
       if (p === 'porekap') loadPOList();
@@ -544,9 +551,9 @@ createApp({
       if (items.length === 0) { showToast('Minimal 1 item part wajib diisi!', 'error'); return; }
       loadingPO.value = true;
       try {
-        await apiFetch('/po', { method: 'POST', body: JSON.stringify({ po_number: newPO.value.po_number, po_date: newPO.value.po_date, customer_id: newPO.value.customer_id || null, target_delivery: newPO.value.target_delivery || null, items: items.map(it => ({ part_number: it.part_number, qty_order: parseInt(it.qty_order) })) }) });
+        await apiFetch('/po', { method: 'POST', body: JSON.stringify({ po_number: newPO.value.po_number, po_date: newPO.value.po_date, customer_id: newPO.value.customer_id || null, target_delivery: newPO.value.target_delivery || null, project: newPO.value.project || null, items: items.map(it => ({ part_number: it.part_number, qty_order: parseInt(it.qty_order) })) }) });
         showToast('PO berhasil disimpan!');
-        newPO.value = { po_number: '', po_date: today(), customer_id: '', target_delivery: '', items: [{ part_number: '', part_name: '', qty_order: '' }] };
+        newPO.value = { po_number: '', po_date: today(), customer_id: '', target_delivery: '', project: '', items: [{ part_number: '', part_name: '', qty_order: '' }] };
         await loadOpenPOList();
       } catch (err) { showToast(err.message, 'error'); }
       finally { loadingPO.value = false; }
@@ -558,12 +565,70 @@ createApp({
 
     async function loadPOList() {
       loadingPO.value = true;
-      try { poList.value = await apiFetch('/po'); } catch (err) { showToast(err.message, 'error'); }
+      try { poList.value = await apiFetch('/po'); poVisibleCount.value = 10; poSearch.value = ''; } catch (err) { showToast(err.message, 'error'); }
       finally { loadingPO.value = false; }
     }
 
+    const poVisibleCount = ref(10);
+    const poSearch = ref('');
+    const filteredPOList = computed(() => {
+      const q = poSearch.value.trim().toLowerCase();
+      if (!q) return poList.value;
+      return poList.value.filter(po => (po.po_number || '').toLowerCase().includes(q));
+    });
+    const visiblePOList = computed(() => filteredPOList.value.slice(0, poVisibleCount.value));
+    function loadMorePO() { poVisibleCount.value += 10; }
+    function onPOSearchInput() { poVisibleCount.value = 10; }
+
     async function viewPODetail(id) {
-      try { poDetail.value = await apiFetch('/po/' + id); } catch (err) { showToast(err.message, 'error'); }
+      try {
+        poDetail.value = await apiFetch('/po/' + id);
+        await nextTick();
+        document.getElementById('po-detail-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (err) { showToast(err.message, 'error'); }
+    }
+
+    const addPoItemForm = ref({ part_number: '', part_name: '', qty_order: 1 });
+    const addPoItemSuggests = ref([]);
+    const loadingAddPoItem = ref(false);
+    function searchAddPoItemSuggest() {
+      const q = (addPoItemForm.value.part_number || '').toLowerCase();
+      if (!q) { addPoItemSuggests.value = []; return; }
+      addPoItemSuggests.value = partsList.value.filter(p =>
+        p.part_number.toLowerCase().includes(q) || p.part_name.toLowerCase().includes(q)
+      );
+    }
+    function selectAddPoItemPart(s) {
+      addPoItemForm.value.part_number = s.part_number;
+      addPoItemForm.value.part_name = s.part_name;
+      addPoItemSuggests.value = [];
+    }
+    async function submitAddPoItem() {
+      if (!addPoItemForm.value.part_number || !addPoItemForm.value.qty_order) {
+        showToast('Part number dan qty wajib diisi!', 'error'); return;
+      }
+      loadingAddPoItem.value = true;
+      try {
+        await apiFetch('/po/' + poDetail.value.id + '/items', {
+          method: 'POST',
+          body: JSON.stringify({ part_number: addPoItemForm.value.part_number, qty_order: parseInt(addPoItemForm.value.qty_order) }),
+        });
+        showToast('Part berhasil ditambahkan!');
+        addPoItemForm.value = { part_number: '', part_name: '', qty_order: 1 };
+        addPoItemSuggests.value = [];
+        await viewPODetail(poDetail.value.id);
+        loadPOList();
+      } catch (err) { showToast(err.message, 'error'); }
+      finally { loadingAddPoItem.value = false; }
+    }
+    async function removePOItem(item) {
+      if (!confirm(`Yakin mau hapus part ${item.part_number} dari PO ini?`)) return;
+      try {
+        await apiFetch('/po/' + poDetail.value.id + '/items/' + item.id, { method: 'DELETE' });
+        showToast('Part berhasil dihapus!');
+        await viewPODetail(poDetail.value.id);
+        loadPOList();
+      } catch (err) { showToast(err.message, 'error'); }
     }
 
     function poStatusBadge(status) {
@@ -688,6 +753,42 @@ createApp({
         a.href = url; a.download = 'surat-jalan-' + id + '.pdf'; a.click();
         URL.revokeObjectURL(url);
       } catch (err) { showToast(err.message, 'error'); }
+    }
+
+    async function previewSJ(id) {
+      sjPreview.value = { show: true, url: '', loading: true };
+      try {
+        const res = await fetch(API_URL + '/surat-jalan/' + id + '/download', {
+          headers: { 'Authorization': 'Bearer ' + token.value }
+        });
+        if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.message || 'Gagal memuat preview'); }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        sjPreview.value = { show: true, url, loading: false };
+      } catch (err) {
+        showToast(err.message, 'error');
+        sjPreview.value = { show: false, url: '', loading: false };
+      }
+    }
+
+    function closeSJPreview() {
+      if (sjPreview.value.url) URL.revokeObjectURL(sjPreview.value.url);
+      sjPreview.value = { show: false, url: '', loading: false };
+    }
+
+    const loadingPendingSJ = ref(false);
+    async function createSJForPO(po) {
+      loadingPendingSJ.value = true;
+      try {
+        const res = await apiFetch('/po/' + po.id + '/pending-surat-jalan');
+        if (res.count === 0) {
+          showToast('Semua pengiriman PO ini sudah pernah dibuatkan surat jalan.', 'error');
+          return;
+        }
+        selectedIds.value = res.transaction_ids;
+        sjModal.value = { show: true, delivery_to: '', date: today(), no_surat_jalan: '', project: '', no_po: res.po_number, loading: false };
+      } catch (err) { showToast(err.message, 'error'); }
+      finally { loadingPendingSJ.value = false; }
     }
 
     function openSJModal() {
@@ -819,27 +920,29 @@ createApp({
     return {
       token, currentUser, isDark, page, inputTab, partsList, historyList, toast,
       masuk, keluar, suggests, loadingMasuk, loadingKeluar,
-      newPart, loadingNewPart, partSearch, partModelFilter, historyFilter, partsColspan,
+      newPart, loadingNewPart, partSearch, partModelFilter, partCommodityFilter, historyFilter, partsColspan,
       auditFilter, activityLogs, loadingAuditLogs, loadActivityLogs, formatDateTime,
-      sjHistory, loadingSJHistory, loadSJHistory, downloadSJAgain,
+      sjHistory, loadingSJHistory, loadSJHistory, downloadSJAgain, sjPreview, previewSJ, closeSJPreview,
       loadingExportAudit, exportAuditExcel,
       priceModal, openPriceModal, submitPriceUpdate, formatRupiah, formatDate,
       importPriceFileInput, loadingImportPrice, handleImportPriceExcel, downloadPriceTemplate,
       timeStr, dateStr, statBeforeQC, statAfterQC,
       isAdmin, isMarketing, isPcd, canManage, canSeePrice, statOk, statCrit, statEmpty, statTotalReject, kritisItems, habisItems,
       poBelumClose, poBelumCloseCount, poClosedCount,
-      partModels, filteredParts, pageTitle, greeting,
-      openPOList, poList, poDetail, loadingPO, newPO, poItemsForSelectedPO,
+      partModels, partCommodities, filteredParts, pageTitle, greeting,
+      openPOList, poList, filteredPOList, visiblePOList, poVisibleCount, poSearch, onPOSearchInput, loadMorePO, poDetail, loadingPO, newPO, poItemsForSelectedPO,
       keluarPoItemQuery, poItemSuggests, selectedPOItem, searchPOItemSuggest, selectPOItem,
       logout, toggleTheme, goPage, searchSuggest, selectPart, poSuggests, searchPOSuggest, selectPOPart,
       submitMasuk, submitKeluar, submitTambahPart,
       addPOItemRow, removePOItemRow, submitPO, loadOpenPOList, loadPOList, viewPODetail, poStatusBadge,
+      addPoItemForm, addPoItemSuggests, loadingAddPoItem, searchAddPoItemSuggest, selectAddPoItemPart, submitAddPoItem, removePOItem,
       poApprovalBadge, canApprovePO, approvePO, loadingApprovePO,
       deletePart, deleteHistory, exportCSV, exportExcelStok, loadHistory, shareWA,
       exportPORekap, loadingExportPO,
       importFileInput, loadingImport, handleImportFile,
       importPOFileInput, loadingImportPO, handleImportPOItems,
       selectedIds, sjModal, allSelected, toggleSelectAll, openSJModal, submitSJModal, quickDownloadSJ,
+      loadingPendingSJ, createSJForPO,
       qcModal, openQcModal, submitQcModal,
     };
   }

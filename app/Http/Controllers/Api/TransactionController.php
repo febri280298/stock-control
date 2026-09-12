@@ -193,7 +193,8 @@ class TransactionController extends Controller
         $data = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i)->format('Y-m-d');
-            $masuk  = Transaction::where('type', 'masuk')->where('date', $date)->where('status_qc', 'After Check QC')->sum('qty_ok');
+            $masuk  = Transaction::where('type', 'masuk')->where('date', $date)->where('status_qc', 'After Check QC')
+                ->get()->sum(fn ($t) => $t->qty_ok ?? $t->qty);
             $keluar = Transaction::where('type', 'keluar')->where('date', $date)->sum('qty');
             $data[] = ['date' => $date, 'masuk' => $masuk, 'keluar' => $keluar];
         }

@@ -30,6 +30,7 @@ class PoController extends Controller
                 'po_date'         => $po->po_date,
                 'customer_id'     => $po->customer_id,
                 'target_delivery' => $po->target_delivery,
+                'project'         => $po->project,
                 'status'          => $po->status,
                 'item_count'      => $po->items->count(),
                 'items'           => $po->items->map(fn ($it) => [
@@ -55,6 +56,7 @@ class PoController extends Controller
             'po_date'         => $po->po_date,
             'customer_id'     => $po->customer_id,
             'target_delivery' => $po->target_delivery,
+            'project'         => $po->project,
             'status'          => $po->status,
             'items'           => $po->items->map(fn ($it) => [
                 'id'            => $it->id,
@@ -120,6 +122,7 @@ class PoController extends Controller
             'po_date'              => 'required|date',
             'customer_id'          => 'nullable|string',
             'target_delivery'      => 'nullable|date',
+            'project'              => 'nullable|string',
             'items'                => 'required|array|min:1',
             'items.*.part_number'  => 'required|string',
             'items.*.qty_order'    => 'required|integer|min:1',
@@ -131,6 +134,7 @@ class PoController extends Controller
                 'po_date'         => $request->po_date,
                 'customer_id'     => $request->customer_id,
                 'target_delivery' => $request->target_delivery,
+                'project'         => $request->project,
                 'created_by'      => $request->user()->id ?? null,
                 'status'          => 'open',
             ]);
@@ -150,5 +154,69 @@ class PoController extends Controller
         ActivityLogger::log($request, 'create', 'Po', $po->id, "Membuat PO baru {$po->po_number} (" . count($request->items) . " item)");
 
         return response()->json(['message' => 'PO berhasil disimpan', 'id' => $po->id], 201);
+    }
+
+    // POST /po/{id}/items -> tambah 1 part baru ke PO yang udah ada
+    // Cuma boleh selama PO belum closed (approval belum mulai sama sekali)
+    public function addItem($id, Request $request)
+    {
+        $po = Po::findOrFail($id);
+
+        if ($po->approvalStage() !== 'delivery') {
+            return response()->json(['message' => 'PO ini sudah closed, part tidak bisa ditambah lagi.'], 422);
+        }
+
+        $request->validate([
+            'part_number' => 'required|string',
+            'qty_order'   => 'required|integer|min:1',
+        ]);
+
+        $part = Part::where('part_number', $request->part_number)->firstOrFail();
+
+        $exists = $po->items()->where('part_id', $part->id)->exists();
+        if ($exists) {
+            return response()->json(['message' => 'Part ini sudah ada di PO ini.'], 422);
+        }
+
+        $item = PoItem::create([
+            'po_id'     => $po->id,
+            'part_id'   => $part->id,
+            'qty_order' => $request->qty_order,
+            'status'    => 'open',
+        ]);
+
+        $po->refreshStatus();
+
+        ActivityLogger::log(
+            $request, 'update', 'Po', $po->id,
+            "Tambah part {$part->part_number} (qty {$request->qty_order}) ke PO {$po->po_number}"
+        );
+
+        return response()->json(['message' => 'Part berhasil ditambahkan', 'id' => $item->id], 201);
+    }
+
+    // DELETE /po/{id}/items/{itemId} -> hapus part dari PO
+    // Cuma boleh kalau PO belum closed DAN part-nya belum ada pengiriman sama sekali
+    public function removeItem($id, $itemId, Request $request)
+    {
+        $po = Po::findOrFail($id);
+        $item = $po->items()->findOrFail($itemId);
+
+        if ($po->approvalStage() !== 'delivery') {
+            return response()->json(['message' => 'PO ini sudah closed, part tidak bisa dihapus lagi.'], 422);
+        }
+
+        if ($item->qty_delivered > 0) {
+            return response()->json(['message' => 'Part ini sudah ada pengiriman, tidak bisa dihapus.'], 422);
+        }
+
+        $label = $item->part->part_number ?? ('#' . $item->id);
+        $item->delete();
+
+        $po->refreshStatus();
+
+        ActivityLogger::log($request, 'update', 'Po', $po->id, "Hapus part {$label} dari PO {$po->po_number}");
+
+        return response()->json(['message' => 'Part berhasil dihapus']);
     }
 }
