@@ -10,7 +10,7 @@
 
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="icon" type="image/png" href="stokin-icon.png">
+  <link rel="icon" type="image/png" href="bti.png">
 
   <!-- Tabler CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler/1.0.0-beta20/css/tabler.min.css">
@@ -50,7 +50,7 @@
     <!-- SIDEBAR -->
     <nav class="sidebar">
       <div class="sidebar-brand">
-        <img src="stokin.png" alt="Logo" onerror="this.style.display='none'">
+        <img src="bti.png" alt="Logo" onerror="this.style.display='none'">
         <small>New Project Inventory System</small>
       </div>
       <div class="nav-section">
