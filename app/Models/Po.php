@@ -8,7 +8,7 @@ class Po extends Model
 {
     protected $table = 'po';
 
-    protected $fillable = ['po_number', 'po_date', 'customer_id', 'target_delivery', 'status', 'created_by', 'notes'];
+    protected $fillable = ['po_number', 'po_date', 'customer_id', 'target_delivery', 'project', 'status', 'created_by', 'notes'];
 
     public function items()
     {

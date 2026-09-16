@@ -21,15 +21,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/parts', [PartController::class, 'index']);
     Route::get('/po', [PoController::class, 'index']);
     Route::get('/po/{id}', [PoController::class, 'show']);
+    Route::get('/po/{id}/pending-surat-jalan', [SuratJalanController::class, 'pendingSuratJalan']);
     Route::get('/transactions', [TransactionController::class, 'index']);
     Route::get('/transactions/chart', [TransactionController::class, 'chart']);
     Route::post('/transactions', [TransactionController::class, 'store']);
     Route::post('/transactions/{id}/approve-qc', [TransactionController::class, 'approveQc']);
     Route::post('/surat-jalan', [SuratJalanController::class, 'generate']);
 
-    // Khusus admin & pcd -> kelola master data part (nambah, hapus, import part baru)
+    // Khusus admin & pcd -> kelola master data part (nambah, edit, hapus, import part baru)
     Route::middleware('role:admin,pcd')->group(function () {
         Route::post('/parts', [PartController::class, 'store']);
+        Route::put('/parts/{id}', [PartController::class, 'update']);
         Route::delete('/parts/{id}', [PartController::class, 'destroy']);
         Route::post('/parts/import', [PartController::class, 'import']);
         Route::delete('/transactions/{id}', [TransactionController::class, 'destroy']);

@@ -5,9 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Control Stock — Inventory System</title>
 
+  <!-- Cegah flash konten mentah {{ }} sebelum Vue selesai mounting -->
+  <style>[v-cloak] { display: none !important; }</style>
+
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="icon" type="image/png" href="bti.png">
+  <link rel="icon" type="image/png" href="stokin-icon.png">
 
   <!-- Tabler CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler/1.0.0-beta20/css/tabler.min.css">
@@ -47,8 +50,8 @@
     <!-- SIDEBAR -->
     <nav class="sidebar">
       <div class="sidebar-brand">
-        <img src="bti.png" alt="Logo" onerror="this.style.display='none'">
-        <small>Inventory Management</small>
+        <img src="stokin.png" alt="Logo" onerror="this.style.display='none'">
+        <small>New Project Inventory System</small>
       </div>
       <div class="nav-section">
         <div class="nav-section-label">Menu Utama</div>
@@ -56,7 +59,7 @@
           <i class="ti ti-layout-dashboard"></i> Dashboard
         </button>
         <button class="nav-link" :class="{active: page==='input'}" @click="goPage('input')" v-if="canManage">
-          <i class="ti ti-circle-plus"></i> Input Transaksi
+          <i class="ti ti-circle-plus"></i> Input Stock
         </button>
         <button class="nav-link" :class="{active: page==='po'}" @click="goPage('po')" v-if="isAdmin || isMarketing">
           <i class="ti ti-file-invoice"></i> Input PO
@@ -248,15 +251,17 @@
               </div>
               <div class="form-group"><label class="form-label">Keterangan</label><input class="form-ctrl" type="text" v-model="keluar.keterangan" placeholder="Optional"></div>
               <div class="form-group"><label class="form-label">Tujuan</label>
-                <select class="form-ctrl" v-model="keluar.tujuan">
-                  <option value="">-- Pilih Tujuan --</option>
-                  <option value="TBINA BP">TBINA BP</option>
-                  <option value="TBINA KP">TBINA KP</option>
-                  <option value="PT ITSP">PT ITSP</option>
-                  <option value="PT AHTI">PT AHTI</option>
-                  <option value="PT MMKI">PT MMKI</option>
-                  <option value="PT ADM">PT ADM</option>
-                </select>
+                <input class="form-ctrl" type="text" v-model="keluar.tujuan" list="tujuanOptions" placeholder="Pilih atau ketik manual" autocomplete="off">
+                <datalist id="tujuanOptions">
+                  <option value="TBINA BP"></option>
+                  <option value="TBINA KP"></option>
+                  <option value="PT ITSP"></option>
+                  <option value="PT AHTI"></option>
+                  <option value="PT MMKI"></option>
+                  <option value="PT ADM"></option>
+                  <option value="ENG BTI"></option>
+                  <option value="QE BTI"></option>
+                </datalist>
               </div>
               <div class="form-group">
                 <label class="form-label">Kategori Keluar</label>
@@ -316,13 +321,23 @@
               <div class="form-group"><label class="form-label">No. PO *</label><input class="form-ctrl" type="text" v-model="newPO.po_number" placeholder="Contoh: 16.08.2026-01"></div>
               <div class="form-group"><label class="form-label">Tanggal PO *</label><input class="form-ctrl" type="date" v-model="newPO.po_date"></div>
             </div>
-            <div class="input-row">
+            <div class="input-row-3">
               <div class="form-group"><label class="form-label">Target Delivery</label><input class="form-ctrl" type="date" v-model="newPO.target_delivery"></div>
               <div class="form-group"><label class="form-label">Customer ID</label><input class="form-ctrl" type="text" v-model="newPO.customer_id" placeholder="Contoh: XXX"></div>
+              <div class="form-group"><label class="form-label">Project</label>
+                <input class="form-ctrl" type="text" v-model="newPO.project" list="poProjectOptions" placeholder="Pilih atau ketik manual" autocomplete="off">
+                <datalist id="poProjectOptions">
+                  <option value="737D"></option>
+                  <option value="5P45"></option>
+                  <option value="5P45V"></option>
+                  <option value="D40L"></option>
+                </datalist>
+              </div>
             </div>
             <div style="border-top:1px solid var(--border, #e5e7eb);margin:16px 0;padding-top:12px;">
               <div style="font-weight:700;margin-bottom:8px;">Item Part</div>
-              <div v-for="(it, idx) in newPO.items" :key="idx" class="po-item-row">
+              <template v-for="(it, idx) in newPO.items" :key="idx">
+              <div class="po-item-row">
                 <div class="form-group pn" style="position:relative;"><label class="form-label">Part Number</label><input class="form-ctrl" type="text" v-model="it.part_number" @input="searchPOSuggest(idx)" placeholder="Contoh: 67796-X7A12" autocomplete="off">
                   <div v-if="poSuggests[idx] && poSuggests[idx].length" style="position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:50;max-height:200px;overflow-y:auto;">
                     <div v-for="s in poSuggests[idx]" :key="s.part_number" @click="selectPOPart(idx, s)" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);">
@@ -331,9 +346,23 @@
                   </div>
                 </div>
                 <div class="form-group name"><label class="form-label">Part Name</label><input class="form-ctrl" type="text" :value="it.part_name" disabled placeholder="Auto"></div>
-                <div class="form-group qty"><label class="form-label">Qty Order</label><input class="form-ctrl" type="number" v-model="it.qty_order" min="1"></div>
+                <div class="form-group qty"><label class="form-label">Qty Order</label><input class="form-ctrl" type="number" v-model="it.qty_order" min="1" :disabled="it.batches && it.batches.length > 0" :title="it.batches && it.batches.length ? 'Otomatis dari total batch di bawah' : ''"></div>
                 <button class="btn btn-danger-soft btn-sm btn-remove-item" @click="removePOItemRow(idx)"><i class="ti ti-x"></i></button>
               </div>
+              <div v-if="!it.batches || !it.batches.length" style="margin:-6px 0 14px 2px;">
+                <span @click="addBatchToItem(idx)" style="cursor:pointer;color:var(--primary);font-size:12px;text-decoration:underline;">+ Pecah jadi beberapa batch pengiriman</span>
+              </div>
+              <div v-else style="margin:-6px 0 14px 2px;padding:10px 12px;background:var(--surface-soft, #f8f9fb);border:1px solid var(--border);border-radius:8px;">
+                <div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--text-soft);">Breakdown batch &middot; total {{ it.qty_order || 0 }} pcs</div>
+                <div v-for="(b, bIdx) in it.batches" :key="bIdx" style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+                  <span style="font-size:12px;min-width:52px;color:var(--text-soft);">Batch {{ bIdx + 1 }}</span>
+                  <input class="form-ctrl" type="number" v-model="b.qty" @input="recalcItemQty(it)" placeholder="Qty" min="1" style="max-width:100px;">
+                  <input class="form-ctrl" type="date" v-model="b.target_date" title="Estimasi tanggal delivery (opsional)" style="max-width:170px;">
+                  <button class="btn btn-danger-soft btn-sm" @click="removeBatchFromItem(idx, bIdx)"><i class="ti ti-x"></i></button>
+                </div>
+                <button class="btn btn-sm" @click="addBatchToItem(idx)"><i class="ti ti-plus"></i> Tambah Batch</button>
+              </div>
+              </template>
               <button class="btn" @click="addPOItemRow"><i class="ti ti-plus"></i> Tambah Item</button>
             </div>
             <button class="btn btn-full" @click="submitPO" :disabled="loadingPO" style="margin-top:16px;background:var(--success);color:#fff;">
@@ -352,15 +381,19 @@
               <i class="ti ti-file-spreadsheet"></i> {{ loadingExportPO ? 'Membuat...' : 'Export Excel (PO Selesai)' }}
             </button>
           </div>
-          <div class="card-body" style="overflow-x:auto;">
+          <div class="card-body" style="padding-bottom:0;">
+            <input class="form-ctrl" type="text" v-model="poSearch" @input="onPOSearchInput" placeholder="Cari No. PO..." style="margin-bottom:14px;max-width:280px;">
+          </div>
+          <div class="card-body" style="overflow-x:auto;padding-top:0;">
             <table class="tbl">
-              <thead><tr><th>No. PO</th><th>Tanggal</th><th class="hide-mobile">Customer ID</th><th class="hide-mobile">Item</th><th>Status Delivery</th><th class="hide-mobile">Approval</th><th></th></tr></thead>
+              <thead><tr><th>No. PO</th><th>Tanggal</th><th class="hide-mobile">Customer ID</th><th class="hide-mobile">Project</th><th class="hide-mobile">Item</th><th>Status Delivery</th><th class="hide-mobile">Approval</th><th></th></tr></thead>
               <tbody>
-                <tr v-if="poList.length === 0"><td colspan="7" class="no-data">Tidak ada data</td></tr>
-                <tr v-for="po in poList" :key="po.id" @click="viewPODetail(po.id)" style="cursor:pointer;">
+                <tr v-if="filteredPOList.length === 0"><td colspan="8" class="no-data">Tidak ada data</td></tr>
+                <tr v-for="po in visiblePOList" :key="po.id" @click="viewPODetail(po.id)" style="cursor:pointer;">
                   <td style="font-weight:700;">{{ po.po_number }}</td>
                   <td>{{ po.po_date }}</td>
                   <td class="hide-mobile">{{ po.customer_id || '-' }}</td>
+                  <td class="hide-mobile">{{ po.project || '-' }}</td>
                   <td class="hide-mobile">{{ po.item_count }} part</td>
                   <td><span :style="{background: poStatusBadge(po.status).bg, color: poStatusBadge(po.status).color, padding:'3px 10px', borderRadius:'6px', fontSize:'12px'}">{{ poStatusBadge(po.status).label }}</span></td>
                   <td class="hide-mobile"><span :style="{background: poApprovalBadge(po.approval_stage).bg, color: poApprovalBadge(po.approval_stage).color, padding:'3px 10px', borderRadius:'6px', fontSize:'12px'}">{{ poApprovalBadge(po.approval_stage).label }}</span></td>
@@ -368,27 +401,71 @@
                 </tr>
               </tbody>
             </table>
+            <div v-if="poVisibleCount < filteredPOList.length" style="text-align:center;padding-top:14px;">
+              <div style="color:var(--text-muted);font-size:13px;margin-bottom:8px;">Menampilkan {{ visiblePOList.length }} dari {{ filteredPOList.length }} PO</div>
+              <button class="btn btn-outline btn-sm" @click="loadMorePO">Muat 10 Lagi</button>
+            </div>
           </div>
         </div>
-        <div class="card" v-if="poDetail" style="margin-top:16px;">
+        <div class="card" id="po-detail-section" v-if="poDetail" style="margin-top:16px;">
           <div class="card-header">
-            <span class="card-title">Detail PO {{ poDetail.po_number }} <span v-if="poDetail.customer_id" style="font-weight:400;color:var(--text-muted);font-size:13px;">&middot; {{ poDetail.customer_id }}</span></span>
-            <span :style="{background: poStatusBadge(poDetail.status).bg, color: poStatusBadge(poDetail.status).color, padding:'3px 10px', borderRadius:'6px', fontSize:'12px'}">{{ poStatusBadge(poDetail.status).label }}</span>
+            <span class="card-title">Detail PO {{ poDetail.po_number }} <span v-if="poDetail.customer_id" style="font-weight:400;color:var(--text-muted);font-size:13px;">&middot; {{ poDetail.customer_id }}</span><span v-if="poDetail.project" style="font-weight:400;color:var(--text-muted);font-size:13px;">&middot; {{ poDetail.project }}</span></span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <button class="btn btn-outline btn-sm" @click="createSJForPO(poDetail)" :disabled="loadingPendingSJ">
+                <i class="ti ti-file-invoice"></i> {{ loadingPendingSJ ? 'Mengecek...' : 'Buat Surat Jalan' }}
+              </button>
+              <span :style="{background: poStatusBadge(poDetail.status).bg, color: poStatusBadge(poDetail.status).color, padding:'3px 10px', borderRadius:'6px', fontSize:'12px'}">{{ poStatusBadge(poDetail.status).label }}</span>
+            </div>
           </div>
           <div class="card-body" style="overflow-x:auto;">
             <table class="tbl">
-              <thead><tr><th>Part</th><th>Nama Part</th><th>Order</th><th>Terkirim</th><th>Sisa</th><th>Status</th></tr></thead>
+              <thead><tr><th>Part</th><th>Nama Part</th><th>Order</th><th>Terkirim</th><th>Sisa</th><th>Status</th><th v-if="poDetail.approval_stage==='delivery'">Aksi</th></tr></thead>
               <tbody>
-                <tr v-for="it in poDetail.items" :key="it.id">
+                <template v-for="it in poDetail.items" :key="it.id">
+                <tr>
                   <td>{{ it.part_number }}</td>
                         <td>{{ it.part_name }}</td>
                   <td>{{ it.qty_order }}</td>
                   <td>{{ it.qty_delivered }}</td>
                   <td>{{ it.qty_order - it.qty_delivered }}</td>
                   <td><span :style="{background: poStatusBadge(it.status).bg, color: poStatusBadge(it.status).color, padding:'3px 10px', borderRadius:'6px', fontSize:'12px'}">{{ poStatusBadge(it.status).label }}</span></td>
+                  <td v-if="poDetail.approval_stage==='delivery'">
+                    <button v-if="it.qty_delivered === 0" class="btn btn-danger-soft btn-sm" @click="removePOItem(it)" title="Hapus part ini">
+                      <i class="ti ti-trash"></i>
+                    </button>
+                    <span v-else style="color:var(--text-muted);font-size:11px;" title="Sudah ada pengiriman, tidak bisa dihapus">-</span>
+                  </td>
                 </tr>
+                <tr v-if="it.batches && it.batches.length > 1">
+                  <td :colspan="poDetail.approval_stage==='delivery' ? 7 : 6" style="background:var(--surface-soft, #f8f9fb);padding:8px 12px;">
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                      <span v-for="b in it.batches" :key="b.id" :style="{background: poStatusBadge(b.status).bg, color: poStatusBadge(b.status).color, padding:'3px 10px', borderRadius:'6px', fontSize:'11px'}">
+                        Batch {{ b.batch_number }}: {{ b.qty_delivered }}/{{ b.qty }} pcs{{ b.target_date ? ' · target ' + b.target_date : '' }}
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+                </template>
               </tbody>
             </table>
+
+            <div v-if="poDetail.approval_stage==='delivery'" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+              <div style="font-weight:700;margin-bottom:8px;font-size:13px;">+ Tambah Part yang terlewat</div>
+              <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;">
+                <div style="position:relative;flex:2;min-width:180px;">
+                  <input class="form-ctrl" type="text" v-model="addPoItemForm.part_number" @input="searchAddPoItemSuggest" placeholder="Ketik Part Number..." autocomplete="off">
+                  <div v-if="addPoItemSuggests.length" style="position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:50;max-height:200px;overflow-y:auto;">
+                    <div v-for="s in addPoItemSuggests" :key="s.part_number" @click="selectAddPoItemPart(s)" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);">
+                      <b>{{ s.part_number }}</b><div style="font-size:12px;color:var(--text-muted);">{{ s.part_name }}</div>
+                    </div>
+                  </div>
+                </div>
+                <input class="form-ctrl" type="number" v-model="addPoItemForm.qty_order" min="1" placeholder="Qty" style="flex:1;min-width:90px;">
+                <button class="btn btn-primary" @click="submitAddPoItem" :disabled="loadingAddPoItem" style="flex:0 0 auto;">
+                  <i class="ti ti-plus"></i> {{ loadingAddPoItem ? 'Menambah...' : 'Tambah' }}
+                </button>
+              </div>
+            </div>
           </div>
           <div class="card-body" style="border-top:1px solid var(--border, #e5e7eb);">
             <div style="font-weight:700;margin-bottom:12px;">Alur Approval</div>
@@ -467,7 +544,11 @@
           </div>
           <div class="card-body" style="padding-bottom:8px;">
             <div class="filter-row">
-              <input class="form-ctrl" type="text" v-model="partSearch" placeholder="Cari PN atau nama...">
+              <input class="form-ctrl" type="text" v-model="partSearch" placeholder="Cari PN, nama, atau commodity...">
+              <select class="form-ctrl" v-model="partCommodityFilter">
+                <option value="">Semua Commodity</option>
+                <option v-for="c in partCommodities" :key="c" :value="c">{{ c }}</option>
+              </select>
               <select class="form-ctrl" v-model="partModelFilter">
                 <option value="">Semua Model</option>
                 <option v-for="m in partModels" :key="m" :value="m">{{ m }}</option>
@@ -504,6 +585,7 @@
                   <td v-if="canSeePrice" class="hide-mobile">{{ p.price_valid_from && p.price_valid_until ? formatDate(p.price_valid_from) + ' - ' + formatDate(p.price_valid_until) : '-' }}</td>
                   <td v-if="canSeePrice" class="hide-mobile">{{ p.tarikan_sales ? formatRupiah(p.tarikan_sales) : '-' }}</td>
                   <td v-if="canManage || canSeePrice" class="hide-mobile" style="white-space:nowrap;">
+                    <button v-if="canManage" class="btn btn-outline btn-sm" @click="openEditPartModal(p)" title="Edit Part"><i class="ti ti-edit"></i></button>
                     <button v-if="canSeePrice" class="btn btn-outline btn-sm" @click="openPriceModal(p)" title="Update Price"><i class="ti ti-currency-dollar"></i></button>
                     <button v-if="canManage" class="btn btn-danger-soft btn-sm" @click="deletePart(p.id)"><i class="ti ti-trash"></i></button>
                   </td>
@@ -536,6 +618,35 @@
             </div>
           </div>
         </div>
+
+        <!-- MODAL EDIT PART -->
+        <div v-if="editPartModal.show" class="modal-backdrop" @click.self="editPartModal.show=false">
+          <div class="modal-box">
+            <div class="modal-header">
+              <span><i class="ti ti-edit" style="color:var(--primary);"></i> Edit Part - {{ editPartModal.part?.part_number }}</span>
+              <button class="modal-close" @click="editPartModal.show=false"><i class="ti ti-x"></i></button>
+            </div>
+            <div class="modal-body">
+              <div class="input-row">
+                <div class="form-group"><label class="form-label">Model</label><input class="form-ctrl" type="text" v-model="editPartModal.form.model" placeholder="Contoh: 737D"></div>
+                <div class="form-group"><label class="form-label">Commodity *</label><input class="form-ctrl" type="text" v-model="editPartModal.form.commodity" placeholder="Contoh: INJECTION PART"></div>
+              </div>
+              <div class="form-group"><label class="form-label">Part Name *</label><input class="form-ctrl" type="text" v-model="editPartModal.form.part_name" placeholder="Nama part lengkap"></div>
+              <div class="input-row">
+                <div class="form-group"><label class="form-label">Part Number *</label><input class="form-ctrl" type="text" v-model="editPartModal.form.part_number" placeholder="Contoh: 71173-X7V30"></div>
+                <div class="form-group"><label class="form-label">Supplier</label><input class="form-ctrl" type="text" v-model="editPartModal.form.supplier" placeholder="Contoh: PT Sinar Jaya"></div>
+              </div>
+              <div class="form-group"><label class="form-label">Minimal Stok</label><input class="form-ctrl" type="number" min="1" v-model="editPartModal.form.min_stock"></div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:-4px;">Ganti Part Number/Part Name di sini aman — histori PO dan transaksi part ini tetap nyambung.</div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-outline" @click="editPartModal.show=false">Batal</button>
+              <button class="btn btn-primary" @click="submitEditPart" :disabled="editPartModal.loading">
+                <i class="ti ti-device-floppy"></i> {{ editPartModal.loading ? 'Menyimpan...' : 'Simpan Perubahan' }}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- HISTORY -->
@@ -548,37 +659,9 @@
                 <option value="">Semua Tipe</option><option value="masuk">Masuk</option><option value="keluar">Keluar</option>
               </select>
               <input class="form-ctrl" type="text" v-model="historyFilter.search" @input="loadHistory" placeholder="Cari PN / nama...">
-              <button class="btn btn-primary" style="white-space:nowrap;" @click="openSJModal" :disabled="selectedIds.length===0" v-if="canManage">
+              <button class="btn btn-primary" style="white-space:nowrap;" @click="openSJModal" :disabled="selectedIds.length===0">
                 <i class="ti ti-file-type-pdf"></i> Surat Jalan ({{ selectedIds.length }})
               </button>
-            </div>
-          </div>
-
-          <!-- MODAL SURAT JALAN -->
-          <div v-if="sjModal.show" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:center;justify-content:center;">
-            <div class="card" style="width:380px;margin:0;max-height:90vh;overflow-y:auto;">
-              <div class="card-header"><span class="card-title">Detail Surat Jalan</span></div>
-              <div class="card-body">
-                <label style="font-size:12px;font-weight:600;">No. Surat Jalan</label>
-                <input class="form-ctrl" style="margin:6px 0 12px;" v-model="sjModal.no_surat_jalan" placeholder="Contoh: SJ-001/VIII/2026">
-                <label style="font-size:12px;font-weight:600;">Delivery To</label>
-                <input class="form-ctrl" style="margin:6px 0 12px;" v-model="sjModal.delivery_to" placeholder="Nama tujuan / customer">
-                <label style="font-size:12px;font-weight:600;">Tanggal</label>
-                <input class="form-ctrl" style="margin:6px 0 12px;" type="date" v-model="sjModal.date">
-                <label style="font-size:12px;font-weight:600;">Project</label>
-                <input class="form-ctrl" style="margin:6px 0 12px;" v-model="sjModal.project" placeholder="Nama project (opsional)">
-                <label style="font-size:12px;font-weight:600;">No. PO</label>
-                <select class="form-ctrl" style="margin:6px 0 16px;" v-model="sjModal.no_po" @focus="loadPOList">
-                  <option value="">-- Ga terikat PO --</option>
-                  <option v-for="po in poList.filter(p => p.status !== 'closed')" :key="po.id" :value="po.po_number">{{ po.po_number }}</option>
-                </select>
-                <div style="display:flex;gap:8px;">
-                  <button class="btn" style="flex:1;background:var(--surface2);color:var(--text);" @click="sjModal.show=false">Batal</button>
-                  <button class="btn btn-primary" style="flex:1;" @click="submitSJModal" :disabled="sjModal.loading">
-                    {{ sjModal.loading ? 'Membuat...' : 'Download' }}
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -610,12 +693,13 @@
                 <tr>
                   <th><input type="checkbox" @change="toggleSelectAll($event)" :checked="allSelected"></th>
                   <th>Tanggal</th><th>Tipe</th><th>PN</th><th>Part Name</th><th>Qty</th>
+                  <th class="hide-mobile">Pengiriman</th>
                   <th class="hide-mobile">QC</th><th class="hide-mobile">Supplier/Customer</th><th class="hide-mobile">Oleh</th>
                   <th v-if="canManage" class="hide-mobile">Aksi</th><th>QC</th><th>Share</th><th>PDF</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-if="historyList.length === 0"><td :colspan="canManage ? 12 : 11" class="no-data">Tidak ada data</td></tr>
+                <tr v-if="historyList.length === 0"><td :colspan="canManage ? 13 : 12" class="no-data">Tidak ada data</td></tr>
                 <tr v-for="h in historyList" :key="h.id">
                   <td><input type="checkbox" :value="h.id" v-model="selectedIds"></td>
                   <td class="td-date">{{ h.date }}<br><span style="color:var(--text-muted);font-size:10px;">{{ h.time || '' }}</span></td>
@@ -623,7 +707,22 @@
                   <td style="font-weight:700;color:var(--primary);white-space:nowrap;">{{ h.part_number }}</td>
                   <td class="td-name">{{ h.part_name }}</td>
                   <td style="font-weight:800;text-align:center;">{{ h.qty_ok }}</td>
-                  <td class="hide-mobile" style="font-size:11px;">{{ h.status_qc || '-' }}</td>
+                  <td class="hide-mobile">
+                    <span v-if="h.delivery_sequence" class="badge badge-ok" style="white-space:nowrap;">
+                      Ke-{{ h.delivery_sequence }} ({{ h.delivery_progress }} pcs)
+                    </span>
+                    <span v-else style="color:var(--text-muted);">-</span>
+                  </td>
+                  <td class="hide-mobile" style="font-size:11px;">
+                    <span
+                      v-if="h.type === 'masuk' && h.status_qc === 'Before Check QC'"
+                      @click="openQcModal(h)"
+                      style="cursor:pointer;color:var(--primary);font-weight:600;text-decoration:underline;"
+                      title="Klik untuk approve QC">
+                      {{ h.status_qc }}
+                    </span>
+                    <span v-else>{{ h.status_qc || '-' }}</span>
+                  </td>
                   <td class="hide-mobile" style="font-size:11px;">{{ h.type === 'masuk' ? (h.supplier || '-') : (h.tujuan || '-') }}</td>
                   <td class="hide-mobile" style="font-size:11px;color:var(--primary);font-weight:600;">{{ h.input_by || '-' }}</td>
                   <td v-if="canManage" class="hide-mobile"><button class="btn btn-danger-soft btn-sm" @click="deleteHistory(h.id)"><i class="ti ti-trash"></i></button></td>
@@ -634,10 +733,7 @@
                     <span v-else style="color:var(--text-muted);">—</span>
                   </td>
                   <td><button class="btn btn-wa btn-sm" @click="shareWA(h)" title="Share ke WhatsApp"><i class="ti ti-brand-whatsapp"></i></button></td>
-                  <td>
-                    <button v-if="canManage" class="btn btn-pdf btn-sm" @click="quickDownloadSJ(h)" title="Download Surat Jalan"><i class="ti ti-file-type-pdf"></i></button>
-                    <span v-else style="color:var(--text-muted);">—</span>
-                  </td>
+                  <td><button class="btn btn-pdf btn-sm" @click="quickDownloadSJ(h)" title="Download Surat Jalan"><i class="ti ti-file-type-pdf"></i></button></td>
                 </tr>
               </tbody>
             </table>
@@ -657,7 +753,7 @@
               <tbody>
                 <tr v-if="!loadingSJHistory && sjHistory.length === 0"><td colspan="8" class="no-data">Belum ada surat jalan yang pernah dibuat</td></tr>
                 <tr v-for="sj in sjHistory" :key="sj.id">
-                  <td style="font-weight:700;">{{ sj.no_surat_jalan || '-' }}</td>
+                  <td style="font-weight:700;color:var(--primary);cursor:pointer;" @click="previewSJ(sj.id)" title="Lihat preview">{{ sj.no_surat_jalan || '-' }}</td>
                   <td>{{ sj.delivery_to || '-' }}</td>
                   <td style="white-space:nowrap;">{{ formatDate(sj.date) }}</td>
                   <td class="hide-mobile">{{ sj.project || '-' }}</td>
@@ -672,6 +768,26 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL PREVIEW SURAT JALAN -->
+      <div v-if="sjPreview.show" class="modal-backdrop" @click.self="closeSJPreview">
+        <div class="modal-box" style="width:min(820px, 92vw);height:min(880px, 90vh);display:flex;flex-direction:column;">
+          <div class="modal-header">
+            <span>Preview Surat Jalan</span>
+            <button class="modal-close" @click="closeSJPreview"><i class="ti ti-x"></i></button>
+          </div>
+          <div class="modal-body" style="flex:1;padding:0;overflow:hidden;">
+            <div v-if="sjPreview.loading" style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);">Memuat preview...</div>
+            <iframe v-else :src="sjPreview.url" style="width:100%;height:100%;border:none;"></iframe>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-outline btn-sm" @click="closeSJPreview">Tutup</button>
+            <a :href="sjPreview.url" download="surat-jalan.pdf" class="btn btn-sm" style="text-decoration:none;">
+              <i class="ti ti-download"></i> Download
+            </a>
           </div>
         </div>
       </div>
@@ -721,12 +837,39 @@
 
     </div><!-- end .main -->
 
+    <!-- MODAL SURAT JALAN (global, dipakai dari halaman History maupun Rekap PO) -->
+    <div v-if="sjModal.show" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:center;justify-content:center;">
+      <div class="card" style="width:380px;margin:0;max-height:90vh;overflow-y:auto;">
+        <div class="card-header"><span class="card-title">Detail Surat Jalan</span></div>
+        <div class="card-body">
+          <label style="font-size:12px;font-weight:600;">No. Surat Jalan</label>
+          <input class="form-ctrl" style="margin:6px 0 12px;" v-model="sjModal.no_surat_jalan" placeholder="Contoh: SJ-001/VIII/2026">
+          <label style="font-size:12px;font-weight:600;">Delivery To</label>
+          <input class="form-ctrl" style="margin:6px 0 12px;" v-model="sjModal.delivery_to" placeholder="Nama tujuan / customer">
+          <label style="font-size:12px;font-weight:600;">Tanggal</label>
+          <input class="form-ctrl" style="margin:6px 0 12px;" type="date" v-model="sjModal.date">
+          <label style="font-size:12px;font-weight:600;">Project</label>
+          <input class="form-ctrl" style="margin:6px 0 12px;" v-model="sjModal.project" placeholder="Nama project (opsional)">
+          <label style="font-size:12px;font-weight:600;">No. PO</label>
+          <select class="form-ctrl" style="margin:6px 0 16px;" v-model="sjModal.no_po" @focus="loadPOList">
+            <option value="">-- Ga terikat PO --</option>
+            <option v-for="po in poList.filter(p => p.status !== 'closed' || p.po_number === sjModal.no_po)" :key="po.id" :value="po.po_number">{{ po.po_number }}</option>
+          </select>
+          <div style="display:flex;gap:8px;">
+            <button class="btn" style="flex:1;background:var(--surface2);color:var(--text);" @click="sjModal.show=false">Batal</button>
+            <button class="btn btn-primary" style="flex:1;" @click="submitSJModal" :disabled="sjModal.loading">
+              {{ sjModal.loading ? 'Membuat...' : 'Download' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- MOBILE NAV -->
     <nav class="mobile-nav">
       <div class="mobile-nav-inner">
         <div class="nav-tab" :class="{active: page==='dashboard'}" @click="goPage('dashboard')"><i class="ti ti-layout-dashboard"></i><span>Dashboard</span></div>
         <div class="nav-tab" :class="{active: page==='input'}" @click="goPage('input')" v-if="canManage"><i class="ti ti-circle-plus"></i><span>Input</span></div>
-        <div class="nav-tab" :class="{active: page==='porekap'}" @click="goPage('porekap')" v-if="isPcd || isAdmin"><i class="ti ti-list-details"></i><span>Rekap PO</span></div>
         <div class="nav-tab" :class="{active: page==='partlist'}" @click="goPage('partlist')"><i class="ti ti-box"></i><span>Part</span></div>
         <div class="nav-tab" :class="{active: page==='history'}" @click="goPage('history')"><i class="ti ti-history"></i><span>History</span></div>
       </div>
@@ -735,6 +878,6 @@
   </div>
 </div>
 
-<script type="module" src="js/main.js?v=3"></script>
+<script type="module" src="js/main.js?v=6"></script>
 </body>
 </html>

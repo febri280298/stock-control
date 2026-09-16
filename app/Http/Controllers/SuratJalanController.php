@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Po;
 use App\Models\SuratJalan;
 use App\Models\Transaction;
 use App\Services\ActivityLogger;
@@ -70,6 +71,35 @@ class SuratJalanController extends Controller
         return response($pdfContent, 200)
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
+
+    // GET /po/{id}/pending-surat-jalan -> transaksi keluar dari PO ini yang belum pernah dibuatkan surat jalan
+    public function pendingSuratJalan($poId)
+    {
+        $po = Po::findOrFail($poId);
+
+        // Kumpulin semua transaction_id yang udah pernah kepake di surat jalan manapun,
+        // biar transaksi yang udah ada surat jalannya gak dobel ke-include lagi.
+        $usedIds = SuratJalan::pluck('transaction_ids')
+            ->filter()
+            ->flatten()
+            ->values()
+            ->all();
+
+        $pending = Transaction::whereHas('poItem', function ($q) use ($poId) {
+                $q->where('po_id', $poId);
+            })
+            ->where('type', 'keluar')
+            ->where('kategori_keluar', 'po')
+            ->whereNotIn('id', $usedIds)
+            ->orderBy('id')
+            ->pluck('id');
+
+        return response()->json([
+            'count'           => $pending->count(),
+            'transaction_ids' => $pending->values(),
+            'po_number'       => $po->po_number,
+        ]);
     }
 
     // GET /surat-jalan -> daftar semua surat jalan yang pernah di-generate

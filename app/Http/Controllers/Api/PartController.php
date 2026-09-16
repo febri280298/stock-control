@@ -52,11 +52,52 @@ class PartController extends Controller
         return response()->json(['message' => 'Part ditambahkan', 'id' => $part->id], 201);
     }
 
+    // PUT /parts/{id} -> edit data part (part number/nama boleh diganti, ID & histori tetap nyambung)
+    public function update(Request $request, $id)
+    {
+        $part = Part::findOrFail($id);
+
+        $request->validate([
+            'commodity'   => 'required|string',
+            'part_name'   => 'required|string',
+            'part_number' => 'required|string|unique:parts,part_number,' . $part->id,
+            'model'       => 'nullable|string',
+            'supplier'    => 'nullable|string',
+            'min_stock'   => 'integer|min:1',
+        ]);
+
+        $before = $part->only(['part_number', 'part_name', 'model', 'commodity', 'supplier', 'min_stock']);
+
+        $part->update([
+            'part_number' => $request->part_number,
+            'part_name'   => $request->part_name,
+            'model'       => $request->model,
+            'commodity'   => $request->commodity,
+            'supplier'    => $request->supplier,
+            'min_stock'   => $request->min_stock ?? $part->min_stock,
+        ]);
+
+        ActivityLogger::log(
+            $request, 'update', 'Part', $part->id,
+            "Update data part: {$before['part_number']} -> {$part->part_number}",
+            ['before' => $before, 'after' => $part->only(['part_number', 'part_name', 'model', 'commodity', 'supplier', 'min_stock'])]
+        );
+
+        return response()->json(['message' => 'Part berhasil diupdate', 'part' => $part]);
+    }
+
     public function destroy(Request $request, $id)
     {
         $part = Part::findOrFail($id);
         $label = "{$part->part_number} - {$part->part_name}";
-        $part->delete();
+
+        try {
+            $part->delete();
+        } catch (\Illuminate\Database\QueryException $e) {
+            return response()->json([
+                'message' => "Part {$label} tidak bisa dihapus karena masih dipakai di riwayat PO atau transaksi. Kalau cuma mau ganti nomor/nama part, pakai fitur Edit Part.",
+            ], 422);
+        }
 
         ActivityLogger::log($request, 'delete', 'Part', $id, "Menghapus part {$label}");
 

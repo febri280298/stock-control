@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Part;
 use App\Models\Po;
 use App\Models\PoItem;
+use App\Models\PoItemBatch;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +17,7 @@ class PoController extends Controller
     // GET /po?status=open,partial -> hanya PO yang belum closed (buat dropdown di form Keluar)
     public function index(Request $request)
     {
-        $query = Po::with('items', 'approvalMkt1User', 'approvalPcdUser', 'approvalMkt2User')->orderBy('po_date', 'desc');
+        $query = Po::with('items.batches', 'approvalMkt1User', 'approvalPcdUser', 'approvalMkt2User')->orderBy('po_date', 'desc');
 
         if ($request->status) {
             $statuses = explode(',', $request->status);
@@ -30,6 +31,7 @@ class PoController extends Controller
                 'po_date'         => $po->po_date,
                 'customer_id'     => $po->customer_id,
                 'target_delivery' => $po->target_delivery,
+                'project'         => $po->project,
                 'status'          => $po->status,
                 'item_count'      => $po->items->count(),
                 'items'           => $po->items->map(fn ($it) => [
@@ -39,6 +41,14 @@ class PoController extends Controller
                     'qty_order'     => $it->qty_order,
                     'qty_delivered' => $it->qty_delivered,
                     'status'        => $it->status,
+                    'batches'       => $it->batches->map(fn ($b) => [
+                        'id'            => $b->id,
+                        'batch_number'  => $b->batch_number,
+                        'qty'           => $b->qty,
+                        'qty_delivered' => $b->qty_delivered,
+                        'target_date'   => $b->target_date,
+                        'status'        => $b->status,
+                    ]),
                 ]),
             ] + $this->approvalPayload($po);
         }));
@@ -47,7 +57,7 @@ class PoController extends Controller
     // GET /po/{id} -> detail 1 PO
     public function show($id)
     {
-        $po = Po::with('items.part', 'approvalMkt1User', 'approvalPcdUser', 'approvalMkt2User')->findOrFail($id);
+        $po = Po::with('items.part', 'items.batches', 'approvalMkt1User', 'approvalPcdUser', 'approvalMkt2User')->findOrFail($id);
 
         return response()->json([
             'id'              => $po->id,
@@ -55,6 +65,7 @@ class PoController extends Controller
             'po_date'         => $po->po_date,
             'customer_id'     => $po->customer_id,
             'target_delivery' => $po->target_delivery,
+            'project'         => $po->project,
             'status'          => $po->status,
             'items'           => $po->items->map(fn ($it) => [
                 'id'            => $it->id,
@@ -63,6 +74,14 @@ class PoController extends Controller
                 'qty_order'     => $it->qty_order,
                 'qty_delivered' => $it->qty_delivered,
                 'status'        => $it->status,
+                'batches'       => $it->batches->map(fn ($b) => [
+                    'id'            => $b->id,
+                    'batch_number'  => $b->batch_number,
+                    'qty'           => $b->qty,
+                    'qty_delivered' => $b->qty_delivered,
+                    'target_date'   => $b->target_date,
+                    'status'        => $b->status,
+                ]),
             ]),
         ] + $this->approvalPayload($po));
     }
@@ -116,13 +135,17 @@ class PoController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'po_number'            => 'required|string|unique:po,po_number',
-            'po_date'              => 'required|date',
-            'customer_id'          => 'nullable|string',
-            'target_delivery'      => 'nullable|date',
-            'items'                => 'required|array|min:1',
-            'items.*.part_number'  => 'required|string',
-            'items.*.qty_order'    => 'required|integer|min:1',
+            'po_number'                    => 'required|string|unique:po,po_number',
+            'po_date'                      => 'required|date',
+            'customer_id'                  => 'nullable|string',
+            'target_delivery'              => 'nullable|date',
+            'project'                      => 'nullable|string',
+            'items'                        => 'required|array|min:1',
+            'items.*.part_number'          => 'required|string',
+            'items.*.qty_order'            => 'required|integer|min:1',
+            'items.*.batches'              => 'nullable|array|min:1',
+            'items.*.batches.*.qty'        => 'required_with:items.*.batches|integer|min:1',
+            'items.*.batches.*.target_date'=> 'nullable|date',
         ]);
 
         $po = DB::transaction(function () use ($request) {
@@ -131,17 +154,29 @@ class PoController extends Controller
                 'po_date'         => $request->po_date,
                 'customer_id'     => $request->customer_id,
                 'target_delivery' => $request->target_delivery,
+                'project'         => $request->project,
                 'created_by'      => $request->user()->id ?? null,
                 'status'          => 'open',
             ]);
 
             foreach ($request->items as $item) {
                 $part = Part::where('part_number', $item['part_number'])->firstOrFail();
-                PoItem::create([
+                $poItem = PoItem::create([
                     'po_id'     => $po->id,
                     'part_id'   => $part->id,
                     'qty_order' => $item['qty_order'],
                 ]);
+
+                // Kalau breakdown batch dikirim, pakai itu. Kalau tidak, 1 batch nampung semua qty (backward compatible).
+                $batches = $item['batches'] ?? [['qty' => $item['qty_order'], 'target_date' => null]];
+                foreach ($batches as $i => $batch) {
+                    PoItemBatch::create([
+                        'po_item_id'   => $poItem->id,
+                        'batch_number' => $i + 1,
+                        'qty'          => $batch['qty'],
+                        'target_date'  => $batch['target_date'] ?? null,
+                    ]);
+                }
             }
 
             return $po;
@@ -150,5 +185,75 @@ class PoController extends Controller
         ActivityLogger::log($request, 'create', 'Po', $po->id, "Membuat PO baru {$po->po_number} (" . count($request->items) . " item)");
 
         return response()->json(['message' => 'PO berhasil disimpan', 'id' => $po->id], 201);
+    }
+
+    // POST /po/{id}/items -> tambah 1 part baru ke PO yang udah ada
+    // Cuma boleh selama PO belum closed (approval belum mulai sama sekali)
+    public function addItem($id, Request $request)
+    {
+        $po = Po::findOrFail($id);
+
+        if ($po->approvalStage() !== 'delivery') {
+            return response()->json(['message' => 'PO ini sudah closed, part tidak bisa ditambah lagi.'], 422);
+        }
+
+        $request->validate([
+            'part_number' => 'required|string',
+            'qty_order'   => 'required|integer|min:1',
+        ]);
+
+        $part = Part::where('part_number', $request->part_number)->firstOrFail();
+
+        $exists = $po->items()->where('part_id', $part->id)->exists();
+        if ($exists) {
+            return response()->json(['message' => 'Part ini sudah ada di PO ini.'], 422);
+        }
+
+        $item = PoItem::create([
+            'po_id'     => $po->id,
+            'part_id'   => $part->id,
+            'qty_order' => $request->qty_order,
+            'status'    => 'open',
+        ]);
+
+        PoItemBatch::create([
+            'po_item_id'   => $item->id,
+            'batch_number' => 1,
+            'qty'          => $request->qty_order,
+        ]);
+
+        $po->refreshStatus();
+
+        ActivityLogger::log(
+            $request, 'update', 'Po', $po->id,
+            "Tambah part {$part->part_number} (qty {$request->qty_order}) ke PO {$po->po_number}"
+        );
+
+        return response()->json(['message' => 'Part berhasil ditambahkan', 'id' => $item->id], 201);
+    }
+
+    // DELETE /po/{id}/items/{itemId} -> hapus part dari PO
+    // Cuma boleh kalau PO belum closed DAN part-nya belum ada pengiriman sama sekali
+    public function removeItem($id, $itemId, Request $request)
+    {
+        $po = Po::findOrFail($id);
+        $item = $po->items()->findOrFail($itemId);
+
+        if ($po->approvalStage() !== 'delivery') {
+            return response()->json(['message' => 'PO ini sudah closed, part tidak bisa dihapus lagi.'], 422);
+        }
+
+        if ($item->qty_delivered > 0) {
+            return response()->json(['message' => 'Part ini sudah ada pengiriman, tidak bisa dihapus.'], 422);
+        }
+
+        $label = $item->part->part_number ?? ('#' . $item->id);
+        $item->delete();
+
+        $po->refreshStatus();
+
+        ActivityLogger::log($request, 'update', 'Po', $po->id, "Hapus part {$label} dari PO {$po->po_number}");
+
+        return response()->json(['message' => 'Part berhasil dihapus']);
     }
 }
