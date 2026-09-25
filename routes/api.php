@@ -42,6 +42,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/parts/{id}/price', [PartController::class, 'updatePrice']);
         Route::post('/parts/import-price', [PartController::class, 'importPrice']);
         Route::post('/po', [PoController::class, 'store']);
+        Route::post('/po/{id}/items', [PoController::class, 'addItem']);
+        Route::delete('/po/{id}/items/{itemId}', [PoController::class, 'removeItem']);
     });
 
     // approve() ga dipasangin middleware role di sini, karena role yang diizinkan

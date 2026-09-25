@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -26,6 +27,15 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        // Route ini di luar middleware auth:sanctum (belum ada token pas request masuk),
+        // jadi $request->user() masih kosong. Kasih tau manual biar ActivityLogger bisa nyatet siapa yang login.
+        $request->setUserResolver(fn () => $user);
+
+        ActivityLogger::log(
+            $request, 'login', 'User', $user->id,
+            "{$user->name} ({$user->role}) login ke sistem"
+        );
+
         return response()->json([
             'token' => $token,
             'user'  => [
@@ -38,7 +48,14 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $user = $request->user();
+
+        ActivityLogger::log(
+            $request, 'logout', 'User', $user->id,
+            "{$user->name} logout dari sistem"
+        );
+
+        $user->currentAccessToken()->delete();
         return response()->json(['message' => 'Logged out']);
     }
 

@@ -30,7 +30,7 @@ class SuratJalanController extends Controller
 
         $date = $request->date
             ? date('d-m-Y', strtotime($request->date))
-            : now()->format('d-m-Y');
+            : '';
 
         // Form FM-PCD-002 digambar ulang di resources/views/pdf/surat-jalan.blade.php,
         // jadi tidak lagi bergantung pada file template PDF. Pengepasan teks panjang
@@ -54,7 +54,7 @@ class SuratJalanController extends Controller
         $suratJalan = SuratJalan::create([
             'no_surat_jalan'  => $request->no_surat_jalan,
             'delivery_to'     => $request->delivery_to,
-            'date'            => $request->date ?: now()->format('Y-m-d'),
+            'date'            => $request->date ?: null,
             'project'         => $request->project,
             'no_po'           => $request->no_po,
             'transaction_ids' => $request->ids,

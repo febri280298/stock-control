@@ -96,7 +96,7 @@ createApp({
     const timeStr = ref('');
     const dateStr = ref('');
     const statBeforeQC = ref(0);
-    const statAfterQC = ref(0);
+    const statAfterQC = computed(() => partsList.value.reduce((sum, p) => sum + (p.stock || 0), 0));
 
     function updateTime() {
       const now = new Date();
@@ -191,12 +191,11 @@ createApp({
     async function loadDashboard() {
       try {
         const hist = await apiFetch('/transactions');
-        let bqc = 0, aqc = 0;
+        let bqc = 0;
         hist.forEach(h => {
           if (h.type === 'masuk' && h.status_qc === 'Before Check QC') bqc += h.qty_ok;
-          if (h.type === 'masuk' && h.status_qc === 'After Check QC') aqc += h.qty_ok;
         });
-        statBeforeQC.value = bqc; statAfterQC.value = aqc;
+        statBeforeQC.value = bqc;
       } catch {}
       await loadChart();
     }
@@ -652,9 +651,18 @@ createApp({
     function loadMorePO() { poVisibleCount.value += 10; }
     function onPOSearchInput() { poVisibleCount.value = 10; }
 
+    const poDetailSearch = ref('');
+    const filteredPoDetailItems = computed(() => {
+      if (!poDetail.value || !poDetail.value.items) return [];
+      const q = poDetailSearch.value.trim().toLowerCase();
+      if (!q) return poDetail.value.items;
+      return poDetail.value.items.filter(it => (it.part_number || '').toLowerCase().includes(q));
+    });
+
     async function viewPODetail(id) {
       try {
         poDetail.value = await apiFetch('/po/' + id);
+        poDetailSearch.value = '';
         await nextTick();
         document.getElementById('po-detail-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } catch (err) { showToast(err.message, 'error'); }
@@ -858,13 +866,13 @@ createApp({
           return;
         }
         selectedIds.value = res.transaction_ids;
-        sjModal.value = { show: true, delivery_to: '', date: today(), no_surat_jalan: '', project: '', no_po: res.po_number, loading: false };
+        sjModal.value = { show: true, delivery_to: '', date: '', no_surat_jalan: '', project: '', no_po: res.po_number, loading: false };
       } catch (err) { showToast(err.message, 'error'); }
       finally { loadingPendingSJ.value = false; }
     }
 
     function openSJModal() {
-      sjModal.value = { show: true, delivery_to: '', date: today(), no_surat_jalan: '', project: '', no_po: '', loading: false };
+      sjModal.value = { show: true, delivery_to: '', date: '', no_surat_jalan: '', project: '', no_po: '', loading: false };
       if (!poList.value.length) loadPOList();
     }
 
@@ -929,6 +937,48 @@ createApp({
     }
 
     const loadingExportPO = ref(false);
+    function exportSinglePODetail() {
+      const po = poDetail.value;
+      if (!po) return;
+
+      const rows = [
+        ['No. PO', po.po_number],
+        ['Tanggal PO', po.po_date],
+        ['Customer ID', po.customer_id || '-'],
+        ['Project', po.project || '-'],
+        ['Status', poStatusBadge(po.status).label],
+        [],
+        ['Part Number', 'Part Name', 'Qty Order', 'Qty Terkirim', 'Sisa', 'Status'],
+      ];
+
+      po.items.forEach(it => {
+        rows.push([it.part_number, it.part_name, it.qty_order, it.qty_delivered, it.qty_order - it.qty_delivered, poStatusBadge(it.status).label]);
+        if (it.batches && it.batches.length > 1) {
+          it.batches.forEach(b => {
+            const label = poStatusBadge(b.status).label + (b.target_date ? ` (target ${b.target_date})` : '');
+            rows.push(['', `   ↳ Batch ${b.batch_number}`, b.qty, b.qty_delivered, b.qty - b.qty_delivered, label]);
+          });
+        }
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [{ wch: 18 }, { wch: 32 }, { wch: 12 }, { wch: 13 }, { wch: 10 }, { wch: 22 }];
+
+      const headerRowIdx = 6;
+      for (let c = 0; c < 6; c++) {
+        const addr = XLSX.utils.encode_cell({ r: headerRowIdx, c });
+        if (ws[addr]) ws[addr].s = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '5F6FFF' } }, alignment: { horizontal: 'center' } };
+      }
+      ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: headerRowIdx, c: 0 }, e: { r: rows.length - 1, c: 5 } }) };
+
+      const sheetName = ('PO ' + po.po_number).replace(/[\[\]\*\/\\\?:]/g, '-').substring(0, 31);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      const safeFilename = po.po_number.replace(/[\/\\]/g, '-');
+      XLSX.writeFile(wb, `po-${safeFilename}-${new Date().toISOString().split('T')[0]}.xlsx`, { cellStyles: true });
+      showToast('Excel PO berhasil didownload!');
+    }
+
     async function exportPORekap() {
       loadingExportPO.value = true;
       try {
@@ -1002,7 +1052,7 @@ createApp({
       isAdmin, isMarketing, isPcd, canManage, canSeePrice, statOk, statCrit, statEmpty, statTotalReject, kritisItems, habisItems,
       poBelumClose, poBelumCloseCount, poClosedCount,
       partModels, partCommodities, filteredParts, pageTitle, greeting,
-      openPOList, poList, filteredPOList, visiblePOList, poVisibleCount, poSearch, onPOSearchInput, loadMorePO, poDetail, loadingPO, newPO, poItemsForSelectedPO,
+      openPOList, poList, filteredPOList, visiblePOList, poVisibleCount, poSearch, onPOSearchInput, loadMorePO, poDetail, poDetailSearch, filteredPoDetailItems, loadingPO, newPO, poItemsForSelectedPO,
       keluarPoItemQuery, poItemSuggests, selectedPOItem, searchPOItemSuggest, selectPOItem,
       logout, toggleTheme, goPage, searchSuggest, selectPart, poSuggests, searchPOSuggest, selectPOPart,
       submitMasuk, submitKeluar, submitTambahPart,
@@ -1010,7 +1060,7 @@ createApp({
       addPoItemForm, addPoItemSuggests, loadingAddPoItem, searchAddPoItemSuggest, selectAddPoItemPart, submitAddPoItem, removePOItem,
       poApprovalBadge, canApprovePO, approvePO, loadingApprovePO,
       deletePart, deleteHistory, exportCSV, exportExcelStok, loadHistory, shareWA,
-      exportPORekap, loadingExportPO,
+      exportPORekap, exportSinglePODetail, loadingExportPO,
       importFileInput, loadingImport, handleImportFile,
       importPOFileInput, loadingImportPO, handleImportPOItems,
       selectedIds, sjModal, allSelected, toggleSelectAll, openSJModal, submitSJModal, quickDownloadSJ,

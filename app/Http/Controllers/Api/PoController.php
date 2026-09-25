@@ -189,13 +189,13 @@ class PoController extends Controller
 
     // POST /po/{id}/items -> tambah 1 part baru ke PO yang udah ada
     // Cuma boleh selama PO belum closed (approval belum mulai sama sekali)
+    // POST /po/{id}/items -> tambah 1 part baru ke PO yang udah ada
+    // Boleh kapan aja (Open/Partial/Closed). Kalau PO-nya udah Closed & mungkin udah keburu
+    // ada approval yang jalan, nambah part di sini otomatis buka lagi status delivery-nya
+    // dan me-reset approval dari awal (mulai lagi dari tahap Marketing).
     public function addItem($id, Request $request)
     {
         $po = Po::findOrFail($id);
-
-        if ($po->approvalStage() !== 'delivery') {
-            return response()->json(['message' => 'PO ini sudah closed, part tidak bisa ditambah lagi.'], 422);
-        }
 
         $request->validate([
             'part_number' => 'required|string',
@@ -208,6 +208,8 @@ class PoController extends Controller
         if ($exists) {
             return response()->json(['message' => 'Part ini sudah ada di PO ini.'], 422);
         }
+
+        $wasClosed = $po->status === 'closed';
 
         $item = PoItem::create([
             'po_id'     => $po->id,
@@ -222,14 +224,28 @@ class PoController extends Controller
             'qty'          => $request->qty_order,
         ]);
 
+        if ($wasClosed) {
+            $po->approval_mkt1_by = null;
+            $po->approval_mkt1_at = null;
+            $po->approval_pcd_by  = null;
+            $po->approval_pcd_at  = null;
+            $po->approval_mkt2_by = null;
+            $po->approval_mkt2_at = null;
+            $po->save();
+        }
+
         $po->refreshStatus();
 
-        ActivityLogger::log(
-            $request, 'update', 'Po', $po->id,
-            "Tambah part {$part->part_number} (qty {$request->qty_order}) ke PO {$po->po_number}"
-        );
+        $label = $wasClosed
+            ? "Tambah part {$part->part_number} (qty {$request->qty_order}) ke PO {$po->po_number} yang sudah Closed — approval direset dari awal."
+            : "Tambah part {$part->part_number} (qty {$request->qty_order}) ke PO {$po->po_number}";
+        ActivityLogger::log($request, 'update', 'Po', $po->id, $label);
 
-        return response()->json(['message' => 'Part berhasil ditambahkan', 'id' => $item->id], 201);
+        $message = $wasClosed
+            ? 'Part berhasil ditambahkan. PO ini sebelumnya Closed, approval sudah direset dari awal.'
+            : 'Part berhasil ditambahkan';
+
+        return response()->json(['message' => $message, 'id' => $item->id], 201);
     }
 
     // DELETE /po/{id}/items/{itemId} -> hapus part dari PO

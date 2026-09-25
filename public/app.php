@@ -386,12 +386,13 @@
           </div>
           <div class="card-body" style="overflow-x:auto;padding-top:0;">
             <table class="tbl">
-              <thead><tr><th>No. PO</th><th>Tanggal</th><th class="hide-mobile">Customer ID</th><th class="hide-mobile">Project</th><th class="hide-mobile">Item</th><th>Status Delivery</th><th class="hide-mobile">Approval</th><th></th></tr></thead>
+              <thead><tr><th>No. PO</th><th>Tanggal</th><th class="hide-mobile">Target Delivery</th><th class="hide-mobile">Customer ID</th><th class="hide-mobile">Project</th><th class="hide-mobile">Item</th><th>Status Delivery</th><th class="hide-mobile">Approval</th><th></th></tr></thead>
               <tbody>
-                <tr v-if="filteredPOList.length === 0"><td colspan="8" class="no-data">Tidak ada data</td></tr>
+                <tr v-if="filteredPOList.length === 0"><td colspan="9" class="no-data">Tidak ada data</td></tr>
                 <tr v-for="po in visiblePOList" :key="po.id" @click="viewPODetail(po.id)" style="cursor:pointer;">
                   <td style="font-weight:700;">{{ po.po_number }}</td>
                   <td>{{ po.po_date }}</td>
+                  <td class="hide-mobile">{{ po.target_delivery || '-' }}</td>
                   <td class="hide-mobile">{{ po.customer_id || '-' }}</td>
                   <td class="hide-mobile">{{ po.project || '-' }}</td>
                   <td class="hide-mobile">{{ po.item_count }} part</td>
@@ -411,17 +412,24 @@
           <div class="card-header">
             <span class="card-title">Detail PO {{ poDetail.po_number }} <span v-if="poDetail.customer_id" style="font-weight:400;color:var(--text-muted);font-size:13px;">&middot; {{ poDetail.customer_id }}</span><span v-if="poDetail.project" style="font-weight:400;color:var(--text-muted);font-size:13px;">&middot; {{ poDetail.project }}</span></span>
             <div style="display:flex;align-items:center;gap:8px;">
+              <button class="btn btn-outline btn-sm" @click="exportSinglePODetail">
+                <i class="ti ti-file-spreadsheet"></i> Export Excel
+              </button>
               <button class="btn btn-outline btn-sm" @click="createSJForPO(poDetail)" :disabled="loadingPendingSJ">
                 <i class="ti ti-file-invoice"></i> {{ loadingPendingSJ ? 'Mengecek...' : 'Buat Surat Jalan' }}
               </button>
               <span :style="{background: poStatusBadge(poDetail.status).bg, color: poStatusBadge(poDetail.status).color, padding:'3px 10px', borderRadius:'6px', fontSize:'12px'}">{{ poStatusBadge(poDetail.status).label }}</span>
             </div>
           </div>
-          <div class="card-body" style="overflow-x:auto;">
+          <div class="card-body" style="padding-bottom:0;">
+            <input class="form-ctrl" type="text" v-model="poDetailSearch" placeholder="Cari Part Number..." style="max-width:280px;">
+          </div>
+          <div class="card-body" style="overflow-x:auto;padding-top:12px;">
             <table class="tbl">
               <thead><tr><th>Part</th><th>Nama Part</th><th>Order</th><th>Terkirim</th><th>Sisa</th><th>Status</th><th v-if="poDetail.approval_stage==='delivery'">Aksi</th></tr></thead>
               <tbody>
-                <template v-for="it in poDetail.items" :key="it.id">
+                <tr v-if="filteredPoDetailItems.length === 0"><td :colspan="poDetail.approval_stage==='delivery' ? 7 : 6" class="no-data">Part tidak ditemukan</td></tr>
+                <template v-for="it in filteredPoDetailItems" :key="it.id">
                 <tr>
                   <td>{{ it.part_number }}</td>
                         <td>{{ it.part_name }}</td>
@@ -449,8 +457,11 @@
               </tbody>
             </table>
 
-            <div v-if="poDetail.approval_stage==='delivery'" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+            <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
               <div style="font-weight:700;margin-bottom:8px;font-size:13px;">+ Tambah Part yang terlewat</div>
+              <div v-if="poDetail.status === 'closed'" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:10px;">
+                <i class="ti ti-alert-triangle"></i> PO ini sudah <b>Closed</b>. Nambah part di sini akan membuka lagi status delivery-nya dan <b>me-reset approval dari awal</b> (mulai lagi dari Approval Marketing).
+              </div>
               <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;">
                 <div style="position:relative;flex:2;min-width:180px;">
                   <input class="form-ctrl" type="text" v-model="addPoItemForm.part_number" @input="searchAddPoItemSuggest" placeholder="Ketik Part Number..." autocomplete="off">
@@ -693,13 +704,12 @@
                 <tr>
                   <th><input type="checkbox" @change="toggleSelectAll($event)" :checked="allSelected"></th>
                   <th>Tanggal</th><th>Tipe</th><th>PN</th><th>Part Name</th><th>Qty</th>
-                  <th class="hide-mobile">Pengiriman</th>
                   <th class="hide-mobile">QC</th><th class="hide-mobile">Supplier/Customer</th><th class="hide-mobile">Oleh</th>
                   <th v-if="canManage" class="hide-mobile">Aksi</th><th>QC</th><th>Share</th><th>PDF</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-if="historyList.length === 0"><td :colspan="canManage ? 13 : 12" class="no-data">Tidak ada data</td></tr>
+                <tr v-if="historyList.length === 0"><td :colspan="canManage ? 12 : 11" class="no-data">Tidak ada data</td></tr>
                 <tr v-for="h in historyList" :key="h.id">
                   <td><input type="checkbox" :value="h.id" v-model="selectedIds"></td>
                   <td class="td-date">{{ h.date }}<br><span style="color:var(--text-muted);font-size:10px;">{{ h.time || '' }}</span></td>
@@ -707,12 +717,6 @@
                   <td style="font-weight:700;color:var(--primary);white-space:nowrap;">{{ h.part_number }}</td>
                   <td class="td-name">{{ h.part_name }}</td>
                   <td style="font-weight:800;text-align:center;">{{ h.qty_ok }}</td>
-                  <td class="hide-mobile">
-                    <span v-if="h.delivery_sequence" class="badge badge-ok" style="white-space:nowrap;">
-                      Ke-{{ h.delivery_sequence }} ({{ h.delivery_progress }} pcs)
-                    </span>
-                    <span v-else style="color:var(--text-muted);">-</span>
-                  </td>
                   <td class="hide-mobile" style="font-size:11px;">
                     <span
                       v-if="h.type === 'masuk' && h.status_qc === 'Before Check QC'"
@@ -846,7 +850,7 @@
           <input class="form-ctrl" style="margin:6px 0 12px;" v-model="sjModal.no_surat_jalan" placeholder="Contoh: SJ-001/VIII/2026">
           <label style="font-size:12px;font-weight:600;">Delivery To</label>
           <input class="form-ctrl" style="margin:6px 0 12px;" v-model="sjModal.delivery_to" placeholder="Nama tujuan / customer">
-          <label style="font-size:12px;font-weight:600;">Tanggal</label>
+          <label style="font-size:12px;font-weight:600;">Tanggal <span style="font-weight:400;color:var(--text-muted);">(opsional, default hari ini)</span></label>
           <input class="form-ctrl" style="margin:6px 0 12px;" type="date" v-model="sjModal.date">
           <label style="font-size:12px;font-weight:600;">Project</label>
           <input class="form-ctrl" style="margin:6px 0 12px;" v-model="sjModal.project" placeholder="Nama project (opsional)">
@@ -870,6 +874,7 @@
       <div class="mobile-nav-inner">
         <div class="nav-tab" :class="{active: page==='dashboard'}" @click="goPage('dashboard')"><i class="ti ti-layout-dashboard"></i><span>Dashboard</span></div>
         <div class="nav-tab" :class="{active: page==='input'}" @click="goPage('input')" v-if="canManage"><i class="ti ti-circle-plus"></i><span>Input</span></div>
+        <div class="nav-tab" :class="{active: page==='porekap'}" @click="goPage('porekap')"><i class="ti ti-list-details"></i><span>PO</span></div>
         <div class="nav-tab" :class="{active: page==='partlist'}" @click="goPage('partlist')"><i class="ti ti-box"></i><span>Part</span></div>
         <div class="nav-tab" :class="{active: page==='history'}" @click="goPage('history')"><i class="ti ti-history"></i><span>History</span></div>
       </div>
@@ -878,6 +883,6 @@
   </div>
 </div>
 
-<script type="module" src="js/main.js?v=6"></script>
+<script type="module" src="js/main.js?v=9"></script>
 </body>
 </html>
