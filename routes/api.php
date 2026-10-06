@@ -37,12 +37,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/transactions/{id}', [TransactionController::class, 'destroy']);
     });
 
-    // Khusus admin & marketing -> kelola harga & bikin PO baru
+    // Khusus admin & marketing -> kelola harga
     Route::middleware('role:admin,marketing')->group(function () {
         Route::put('/parts/{id}/price', [PartController::class, 'updatePrice']);
         Route::post('/parts/import-price', [PartController::class, 'importPrice']);
+    });
+
+    // Admin, marketing & pcd -> bikin PO baru & kelola item PO
+    Route::middleware('role:admin,marketing,pcd')->group(function () {
         Route::post('/po', [PoController::class, 'store']);
         Route::post('/po/{id}/items', [PoController::class, 'addItem']);
+        Route::put('/po/{id}/items/{itemId}/add-qty', [PoController::class, 'addQty']);
         Route::delete('/po/{id}/items/{itemId}', [PoController::class, 'removeItem']);
     });
 

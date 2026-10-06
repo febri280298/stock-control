@@ -277,7 +277,7 @@ createApp({
 
     function goPage(p) {
       if (p === 'input' && !canManage.value) { showToast('Hanya admin yang bisa input transaksi!', 'error'); return; }
-      if (p === 'po' && !isAdmin.value && !isMarketing.value) { showToast('Hanya admin/marketing yang bisa input PO!', 'error'); return; }
+      if (p === 'po' && !isAdmin.value && !isMarketing.value && !isPcd.value) { showToast('Hanya admin/marketing/pcd yang bisa input PO!', 'error'); return; }
       if (p === 'auditlog' && !isAdmin.value) { showToast('Hanya admin yang bisa lihat audit trail!', 'error'); return; }
       if (p === 'sjhistory' && !isAdmin.value && !isPcd.value) { showToast('Hanya admin/pcd yang bisa lihat history surat jalan!', 'error'); return; }
       page.value = p;
@@ -528,10 +528,27 @@ createApp({
         item.qty_order = item.batches.reduce((sum, b) => sum + (parseInt(b.qty) || 0), 0);
       }
     }
+
+    // Template tanggal per Batch, berlaku buat SEMUA item sekaligus — biar gak isi manual tiap part.
+    const batchDateTemplate = ref(['', '']);
+    function addBatchDateTemplateRow() { batchDateTemplate.value.push(''); }
+    function removeBatchDateTemplateRow(i) { batchDateTemplate.value.splice(i, 1); }
+    function applyBatchDatesToAllItems() {
+      let touched = 0;
+      newPO.value.items.forEach(item => {
+        if (!item.batches || !item.batches.length) return;
+        item.batches.forEach((b, i) => {
+          if (batchDateTemplate.value[i]) { b.target_date = batchDateTemplate.value[i]; touched++; }
+        });
+      });
+      showToast(touched ? `Tanggal diterapkan ke ${touched} batch di semua item.` : 'Belum ada batch di item manapun untuk diisi tanggalnya.', touched ? 'success' : 'error');
+    }
+
     function addBatchToItem(idx) {
       const item = newPO.value.items[idx];
       if (!item.batches) item.batches = [];
-      item.batches.push({ qty: '', target_date: '' });
+      const newBatchIdx = item.batches.length;
+      item.batches.push({ qty: '', target_date: batchDateTemplate.value[newBatchIdx] || '' });
       recalcItemQty(item);
     }
     function removeBatchFromItem(idx, bIdx) {
@@ -625,6 +642,7 @@ createApp({
         })) }) });
         showToast('PO berhasil disimpan!');
         newPO.value = { po_number: '', po_date: today(), customer_id: '', target_delivery: '', project: '', items: [{ part_number: '', part_name: '', qty_order: '', batches: [] }] };
+        batchDateTemplate.value = ['', ''];
         await loadOpenPOList();
       } catch (err) { showToast(err.message, 'error'); }
       finally { loadingPO.value = false; }
@@ -644,8 +662,10 @@ createApp({
     const poSearch = ref('');
     const filteredPOList = computed(() => {
       const q = poSearch.value.trim().toLowerCase();
-      if (!q) return poList.value;
-      return poList.value.filter(po => (po.po_number || '').toLowerCase().includes(q));
+      const base = q ? poList.value.filter(po => (po.po_number || '').toLowerCase().includes(q)) : poList.value;
+      // Belum Closed (Open/Partial) naik ke atas, yang udah Closed turun ke bawah.
+      // Dalam masing-masing grup, tetap urut dari yang paling baru (sesuai urutan asli dari backend).
+      return [...base].sort((a, b) => (a.status === 'closed' ? 1 : 0) - (b.status === 'closed' ? 1 : 0));
     });
     const visiblePOList = computed(() => filteredPOList.value.slice(0, poVisibleCount.value));
     function loadMorePO() { poVisibleCount.value += 10; }
@@ -709,6 +729,89 @@ createApp({
         await viewPODetail(poDetail.value.id);
         loadPOList();
       } catch (err) { showToast(err.message, 'error'); }
+    }
+
+    const loadingImportAddQty = ref(false);
+    async function handleImportAddQty(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (!poDetail.value) { showToast('Buka Detail PO dulu sebelum import!', 'error'); e.target.value = ''; return; }
+
+      try {
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+
+        let headerRowIdx = -1, pnCol = -1, qtyCol = -1;
+        for (let r = 0; r < rows.length; r++) {
+          const cells = rows[r].map(c => String(c).trim().toUpperCase());
+          const pi = cells.indexOf('PART NUMBER');
+          const qi = cells.indexOf('QTY');
+          if (pi !== -1 && qi !== -1) { headerRowIdx = r; pnCol = pi; qtyCol = qi; break; }
+        }
+        if (headerRowIdx === -1) { showToast('Format Excel tidak dikenali. Pastikan ada kolom "PART NUMBER" dan "QTY".', 'error'); e.target.value = ''; return; }
+
+        const itemsByPn = new Map(poDetail.value.items.map(it => [it.part_number.toLowerCase(), it]));
+        const matched = [];
+        const notFound = [];
+        for (let r = headerRowIdx + 1; r < rows.length; r++) {
+          const row = rows[r];
+          const pn = row[pnCol] ? String(row[pnCol]).trim() : '';
+          const qty = parseInt(row[qtyCol]);
+          if (!pn || !qty || qty < 1) continue;
+          const item = itemsByPn.get(pn.toLowerCase());
+          if (item) matched.push({ item, qty }); else notFound.push(pn);
+        }
+
+        if (!matched.length) { showToast('Tidak ada Part Number yang cocok dengan item di PO ini.', 'error'); e.target.value = ''; return; }
+        if (!confirm(`Ditemukan ${matched.length} part cocok di PO ini${notFound.length ? `, ${notFound.length} tidak ditemukan` : ''}. Lanjut proses tambah qty?`)) { e.target.value = ''; return; }
+
+        loadingImportAddQty.value = true;
+        let success = 0, failed = [];
+        for (const { item, qty } of matched) {
+          try {
+            await apiFetch('/po/' + poDetail.value.id + '/items/' + item.id + '/add-qty', {
+              method: 'PUT', body: JSON.stringify({ qty, as_new_batch: false }),
+            });
+            success++;
+          } catch (err) { failed.push(`${item.part_number} (${err.message})`); }
+        }
+
+        let msg = `${success} part berhasil ditambah qty-nya.`;
+        if (notFound.length) msg += ` ${notFound.length} PN tidak ditemukan di PO ini: ${notFound.slice(0, 5).join(', ')}${notFound.length > 5 ? ', ...' : ''}.`;
+        if (failed.length) msg += ` ${failed.length} gagal: ${failed.slice(0, 5).join(', ')}.`;
+        showToast(msg, failed.length ? 'error' : 'success');
+
+        await viewPODetail(poDetail.value.id);
+        loadPOList();
+      } catch (err) {
+        showToast('Gagal membaca file: ' + err.message, 'error');
+      } finally {
+        loadingImportAddQty.value = false;
+        e.target.value = '';
+      }
+    }
+
+    const addQtyModal = ref({ show: false, loading: false, item: null, qty: '', asNewBatch: false, targetDate: '' });
+    function openAddQtyModal(item) {
+      addQtyModal.value = { show: true, loading: false, item, qty: '', asNewBatch: false, targetDate: '' };
+    }
+    async function submitAddQty() {
+      const qty = parseInt(addQtyModal.value.qty);
+      if (!qty || qty < 1) { showToast('Qty harus diisi angka lebih dari 0!', 'error'); return; }
+      addQtyModal.value.loading = true;
+      try {
+        const item = addQtyModal.value.item;
+        const res = await apiFetch('/po/' + poDetail.value.id + '/items/' + item.id + '/add-qty', {
+          method: 'PUT', body: JSON.stringify({ qty, as_new_batch: addQtyModal.value.asNewBatch, target_date: addQtyModal.value.targetDate || null }),
+        });
+        showToast(res.message);
+        addQtyModal.value.show = false;
+        await viewPODetail(poDetail.value.id);
+        loadPOList();
+      } catch (err) { showToast(err.message, 'error'); }
+      finally { addQtyModal.value.loading = false; }
     }
 
     function poStatusBadge(status) {
@@ -814,6 +917,15 @@ createApp({
     }
 
     const sjHistory = ref([]);
+    const sjHistorySearch = ref('');
+    const filteredSJHistory = computed(() => {
+      const q = sjHistorySearch.value.trim().toLowerCase();
+      if (!q) return sjHistory.value;
+      return sjHistory.value.filter(sj =>
+        (sj.no_surat_jalan || '').toLowerCase().includes(q) ||
+        (sj.no_po || '').toLowerCase().includes(q)
+      );
+    });
     const loadingSJHistory = ref(false);
     async function loadSJHistory() {
       loadingSJHistory.value = true;
@@ -1044,7 +1156,7 @@ createApp({
       masuk, keluar, suggests, loadingMasuk, loadingKeluar,
       newPart, loadingNewPart, partSearch, partModelFilter, partCommodityFilter, historyFilter, partsColspan,
       auditFilter, activityLogs, loadingAuditLogs, loadActivityLogs, formatDateTime,
-      sjHistory, loadingSJHistory, loadSJHistory, downloadSJAgain, sjPreview, previewSJ, closeSJPreview,
+      sjHistory, sjHistorySearch, filteredSJHistory, loadingSJHistory, loadSJHistory, downloadSJAgain, sjPreview, previewSJ, closeSJPreview,
       loadingExportAudit, exportAuditExcel,
       priceModal, openPriceModal, submitPriceUpdate, editPartModal, openEditPartModal, submitEditPart, formatRupiah, formatDate,
       importPriceFileInput, loadingImportPrice, handleImportPriceExcel, downloadPriceTemplate,
@@ -1056,8 +1168,8 @@ createApp({
       keluarPoItemQuery, poItemSuggests, selectedPOItem, searchPOItemSuggest, selectPOItem,
       logout, toggleTheme, goPage, searchSuggest, selectPart, poSuggests, searchPOSuggest, selectPOPart,
       submitMasuk, submitKeluar, submitTambahPart,
-      addPOItemRow, removePOItemRow, recalcItemQty, addBatchToItem, removeBatchFromItem, submitPO, loadOpenPOList, loadPOList, viewPODetail, poStatusBadge,
-      addPoItemForm, addPoItemSuggests, loadingAddPoItem, searchAddPoItemSuggest, selectAddPoItemPart, submitAddPoItem, removePOItem,
+      addPOItemRow, removePOItemRow, recalcItemQty, addBatchToItem, removeBatchFromItem, batchDateTemplate, addBatchDateTemplateRow, removeBatchDateTemplateRow, applyBatchDatesToAllItems, submitPO, loadOpenPOList, loadPOList, viewPODetail, poStatusBadge,
+      addPoItemForm, addPoItemSuggests, loadingAddPoItem, searchAddPoItemSuggest, selectAddPoItemPart, submitAddPoItem, removePOItem, addQtyModal, openAddQtyModal, submitAddQty, loadingImportAddQty, handleImportAddQty,
       poApprovalBadge, canApprovePO, approvePO, loadingApprovePO,
       deletePart, deleteHistory, exportCSV, exportExcelStok, loadHistory, shareWA,
       exportPORekap, exportSinglePODetail, loadingExportPO,

@@ -61,7 +61,7 @@
         <button class="nav-link" :class="{active: page==='input'}" @click="goPage('input')" v-if="canManage">
           <i class="ti ti-circle-plus"></i> Input Stock
         </button>
-        <button class="nav-link" :class="{active: page==='po'}" @click="goPage('po')" v-if="isAdmin || isMarketing">
+        <button class="nav-link" :class="{active: page==='po'}" @click="goPage('po')" v-if="isAdmin || isMarketing || isPcd">
           <i class="ti ti-file-invoice"></i> Input PO
         </button>
         <button class="nav-link" :class="{active: page==='porekap'}" @click="goPage('porekap')">
@@ -335,6 +335,21 @@
               </div>
             </div>
             <div style="border-top:1px solid var(--border, #e5e7eb);margin:16px 0;padding-top:12px;">
+              <div style="background:var(--surface-soft, #f8f9fb);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:16px;">
+                <div style="font-weight:700;font-size:13px;margin-bottom:4px;">Template Tanggal per Batch <span style="font-weight:400;color:var(--text-muted);">(berlaku buat semua item, isi sekali aja)</span></div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;">
+                  <div v-for="(d, i) in batchDateTemplate" :key="i" style="display:flex;align-items:center;gap:4px;">
+                    <span style="font-size:12px;color:var(--text-muted);min-width:56px;">Batch {{ i + 1 }}</span>
+                    <input class="form-ctrl" type="date" v-model="batchDateTemplate[i]" style="max-width:170px;">
+                    <button v-if="batchDateTemplate.length > 1" class="btn btn-danger-soft btn-sm" @click="removeBatchDateTemplateRow(i)"><i class="ti ti-x"></i></button>
+                  </div>
+                  <button class="btn btn-sm" @click="addBatchDateTemplateRow"><i class="ti ti-plus"></i> Tambah Batch</button>
+                </div>
+                <button class="btn btn-primary btn-sm" @click="applyBatchDatesToAllItems" style="margin-top:10px;">
+                  <i class="ti ti-check"></i> Terapkan ke Semua Item
+                </button>
+              </div>
+
               <div style="font-weight:700;margin-bottom:8px;">Item Part</div>
               <template v-for="(it, idx) in newPO.items" :key="idx">
               <div class="po-item-row">
@@ -415,6 +430,10 @@
               <button class="btn btn-outline btn-sm" @click="exportSinglePODetail">
                 <i class="ti ti-file-spreadsheet"></i> Export Excel
               </button>
+              <button class="btn btn-outline btn-sm" @click="$refs.importAddQtyInput.click()" :disabled="loadingImportAddQty" title="Excel: kolom PART NUMBER & QTY">
+                <i class="ti ti-upload"></i> {{ loadingImportAddQty ? 'Memproses...' : 'Import Tambah Qty' }}
+              </button>
+              <input type="file" ref="importAddQtyInput" accept=".xlsx,.xls" style="display:none" @change="handleImportAddQty">
               <button class="btn btn-outline btn-sm" @click="createSJForPO(poDetail)" :disabled="loadingPendingSJ">
                 <i class="ti ti-file-invoice"></i> {{ loadingPendingSJ ? 'Mengecek...' : 'Buat Surat Jalan' }}
               </button>
@@ -426,9 +445,9 @@
           </div>
           <div class="card-body" style="overflow-x:auto;padding-top:12px;">
             <table class="tbl">
-              <thead><tr><th>Part</th><th>Nama Part</th><th>Order</th><th>Terkirim</th><th>Sisa</th><th>Status</th><th v-if="poDetail.approval_stage==='delivery'">Aksi</th></tr></thead>
+              <thead><tr><th>Part</th><th>Nama Part</th><th>Order</th><th>Terkirim</th><th>Sisa</th><th>Status</th><th>Tambah Qty</th><th v-if="poDetail.approval_stage==='delivery'">Aksi</th></tr></thead>
               <tbody>
-                <tr v-if="filteredPoDetailItems.length === 0"><td :colspan="poDetail.approval_stage==='delivery' ? 7 : 6" class="no-data">Part tidak ditemukan</td></tr>
+                <tr v-if="filteredPoDetailItems.length === 0"><td :colspan="poDetail.approval_stage==='delivery' ? 8 : 7" class="no-data">Part tidak ditemukan</td></tr>
                 <template v-for="it in filteredPoDetailItems" :key="it.id">
                 <tr>
                   <td>{{ it.part_number }}</td>
@@ -437,6 +456,11 @@
                   <td>{{ it.qty_delivered }}</td>
                   <td>{{ it.qty_order - it.qty_delivered }}</td>
                   <td><span :style="{background: poStatusBadge(it.status).bg, color: poStatusBadge(it.status).color, padding:'3px 10px', borderRadius:'6px', fontSize:'12px'}">{{ poStatusBadge(it.status).label }}</span></td>
+                  <td>
+                    <button class="btn btn-outline btn-sm" @click="openAddQtyModal(it)" title="Tambah qty part ini (bisa meski PO sudah Closed)">
+                      <i class="ti ti-plus"></i>
+                    </button>
+                  </td>
                   <td v-if="poDetail.approval_stage==='delivery'">
                     <button v-if="it.qty_delivered === 0" class="btn btn-danger-soft btn-sm" @click="removePOItem(it)" title="Hapus part ini">
                       <i class="ti ti-trash"></i>
@@ -445,7 +469,7 @@
                   </td>
                 </tr>
                 <tr v-if="it.batches && it.batches.length > 1">
-                  <td :colspan="poDetail.approval_stage==='delivery' ? 7 : 6" style="background:var(--surface-soft, #f8f9fb);padding:8px 12px;">
+                  <td :colspan="poDetail.approval_stage==='delivery' ? 8 : 7" style="background:var(--surface-soft, #f8f9fb);padding:8px 12px;">
                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
                       <span v-for="b in it.batches" :key="b.id" :style="{background: poStatusBadge(b.status).bg, color: poStatusBadge(b.status).color, padding:'3px 10px', borderRadius:'6px', fontSize:'11px'}">
                         Batch {{ b.batch_number }}: {{ b.qty_delivered }}/{{ b.qty }} pcs{{ b.target_date ? ' · target ' + b.target_date : '' }}
@@ -508,6 +532,40 @@
             </button>
             <div v-else-if="poDetail.approval_stage === 'delivery'" style="margin-top:16px;font-size:13px;color:var(--text-muted);"><i class="ti ti-info-circle"></i> Approval baru bisa mulai setelah Status Delivery jadi Closed.</div>
             <div v-else-if="poDetail.approval_stage === 'completed'" style="margin-top:16px;font-size:13px;color:var(--success);font-weight:600;"><i class="ti ti-circle-check"></i> PO ini sudah selesai sepenuhnya.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL TAMBAH QTY -->
+      <div v-if="addQtyModal.show" class="modal-backdrop" @click.self="addQtyModal.show=false">
+        <div class="modal-box">
+          <div class="modal-header">
+            <span><i class="ti ti-plus" style="color:var(--primary);"></i> Tambah Qty — {{ addQtyModal.item?.part_number }}</span>
+            <button class="modal-close" @click="addQtyModal.show=false"><i class="ti ti-x"></i></button>
+          </div>
+          <div class="modal-body">
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">
+              Qty Order saat ini: <b>{{ addQtyModal.item?.qty_order }}</b> pcs
+            </div>
+            <div class="form-group"><label class="form-label">Tambah Qty</label>
+              <input class="form-ctrl" type="number" min="1" v-model="addQtyModal.qty" placeholder="Contoh: 10" @keyup.enter="submitAddQty">
+            </div>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin:10px 0;">
+              <input type="checkbox" v-model="addQtyModal.asNewBatch">
+              Jadikan Batch baru (tampil terpisah, bisa dikasih target tanggal)
+            </label>
+            <div v-if="addQtyModal.asNewBatch" class="form-group"><label class="form-label">Target Tanggal Batch Baru (opsional)</label>
+              <input class="form-ctrl" type="date" v-model="addQtyModal.targetDate">
+            </div>
+            <div v-if="poDetail.status === 'closed'" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:8px;padding:8px 12px;font-size:12px;margin-top:4px;">
+              <i class="ti ti-alert-triangle"></i> PO ini sudah <b>Closed</b>. Nambah qty akan membuka lagi status delivery-nya dan <b>me-reset approval dari awal</b>.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-outline" @click="addQtyModal.show=false">Batal</button>
+            <button class="btn btn-primary" @click="submitAddQty" :disabled="addQtyModal.loading">
+              <i class="ti ti-device-floppy"></i> {{ addQtyModal.loading ? 'Menyimpan...' : 'Tambah Qty' }}
+            </button>
           </div>
         </div>
       </div>
@@ -749,14 +807,17 @@
       <div class="page" v-if="page==='sjhistory'">
         <div class="card">
           <div class="card-header"><span class="card-title"><i class="ti ti-truck-delivery"></i> History Surat Jalan</span></div>
-          <div class="table-wrap">
+          <div class="card-body" style="padding-bottom:0;">
+            <input class="form-ctrl" type="text" v-model="sjHistorySearch" placeholder="Cari No. Surat Jalan atau No. PO..." style="max-width:320px;">
+          </div>
+          <div class="table-wrap" style="padding-top:12px;">
             <table class="table">
               <thead>
                 <tr><th>No. SJ</th><th>Delivery To</th><th>Tanggal</th><th class="hide-mobile">Project</th><th class="hide-mobile">No. PO</th><th>Item</th><th class="hide-mobile">Dibuat Oleh</th><th>Aksi</th></tr>
               </thead>
               <tbody>
-                <tr v-if="!loadingSJHistory && sjHistory.length === 0"><td colspan="8" class="no-data">Belum ada surat jalan yang pernah dibuat</td></tr>
-                <tr v-for="sj in sjHistory" :key="sj.id">
+                <tr v-if="!loadingSJHistory && filteredSJHistory.length === 0"><td colspan="8" class="no-data">{{ sjHistorySearch ? 'Tidak ditemukan' : 'Belum ada surat jalan yang pernah dibuat' }}</td></tr>
+                <tr v-for="sj in filteredSJHistory" :key="sj.id">
                   <td style="font-weight:700;color:var(--primary);cursor:pointer;" @click="previewSJ(sj.id)" title="Lihat preview">{{ sj.no_surat_jalan || '-' }}</td>
                   <td>{{ sj.delivery_to || '-' }}</td>
                   <td style="white-space:nowrap;">{{ formatDate(sj.date) }}</td>
@@ -883,6 +944,6 @@
   </div>
 </div>
 
-<script type="module" src="js/main.js?v=9"></script>
+<script type="module" src="js/main.js?v=16"></script>
 </body>
 </html>

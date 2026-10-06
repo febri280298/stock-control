@@ -2,6 +2,12 @@
   Surat Jalan — reproduksi form resmi FM-PCD-002 rev.00 (08-06-2020).
   Semua posisi dalam pt, diambil dari geometri asli surat-jalan-template.pdf
   (Letter 612x792). Jangan ubah angka koordinat tanpa mengukur ulang PDF-nya.
+
+  Multi-halaman: item dipecah per halaman berdasarkan TOTAL TINGGI baris
+  (bukan jumlah item), jadi 22 item satu-baris = 1 lembar penuh, dan kalau ada
+  nama part yang turun jadi 2-3 baris, lembar itu otomatis memuat lebih sedikit.
+  Kop, No SJ, DELIVERY/DATE, PROJECT/NO. PO, dan tanda tangan diulang persis
+  sama di tiap lembar. Kolom NO lanjut (23, 24, ...) antar lembar.
 --}}
 @php
     use App\Support\PdfText;
@@ -40,7 +46,26 @@
         ];
     }
 
-    $fill = max(0, $BODY - array_sum(array_column($rows, 'h')));
+    // Pecah jadi halaman: tambah baris ke halaman berjalan selama total tinggi
+    // masih <= $BODY; kalau tidak muat, mulai halaman baru.
+    $pages   = [];
+    $curRows = [];
+    $curH    = 0;
+    $seq     = 0; // nomor urut item global, lanjut antar halaman (JANGAN pakai $no: itu No. Surat Jalan dari controller)
+
+    foreach ($rows as $r) {
+        if (! empty($curRows) && $curH + $r['h'] > $BODY) {
+            $pages[] = ['rows' => $curRows, 'fill' => max(0, $BODY - $curH)];
+            $curRows = [];
+            $curH    = 0;
+        }
+        $r['no']   = ++$seq;
+        $curRows[] = $r;
+        $curH     += $r['h'];
+    }
+
+    // Halaman terakhir (atau satu halaman kosong kalau tidak ada item).
+    $pages[] = ['rows' => $curRows, 'fill' => max(0, $BODY - $curH)];
 @endphp
 <!DOCTYPE html>
 <html>
@@ -57,6 +82,12 @@
   .abs { position: absolute; }
   table { border-collapse: collapse; }
   .bx td, .bx th { border: 0.8pt solid #000; }
+
+  /* ---------- satu lembar ---------- */
+  /* Tinggi sedikit di bawah 792pt supaya dompdf tidak membuat halaman kosong
+     ekstra karena pembulatan. Semua elemen .abs diposisikan relatif ke lembar. */
+  .page { position: relative; width: 612pt; height: 788pt; overflow: hidden; }
+  .page + .page { page-break-before: always; }
 
   /* ---------- kop ---------- */
   .company  { left: 40.9pt; top: 24pt;   font-size: 10.5pt; font-weight: bold; }
@@ -104,7 +135,8 @@
     overflow-wrap: break-word;
   }
   .items td.c { text-align: center; }
-  .items tr.fill td { border-bottom: 0.8pt solid #000; height: {{ $fill }}pt; }
+  /* tinggi baris pengisi dihitung per halaman, diisi inline di bawah */
+  .items tr.fill td { border-bottom: 0.8pt solid #000; }
 
   /* ---------- blok tanda tangan ---------- */
   .sign { top: 676pt; width: 83pt; font-size: 7pt; }
@@ -118,6 +150,9 @@
 </style>
 </head>
 <body>
+
+@foreach ($pages as $pg)
+<div class="page">
 
   {{-- ===== KOP KIRI ===== --}}
   <div class="abs company">PT. BONECOM TRICOM</div>
@@ -165,10 +200,10 @@
       </tr>
     </thead>
     <tbody>
-      @foreach ($rows as $i => $r)
+      @foreach ($pg['rows'] as $r)
         {{-- tinggi ditaruh di sel, bukan di <tr>: dompdf mengabaikan height pada baris --}}
         <tr>
-          <td class="c" style="height:{{ $r['h'] }}pt;">{{ $i + 1 }}</td>
+          <td class="c" style="height:{{ $r['h'] }}pt;">{{ $r['no'] }}</td>
           <td style="font-size:{{ $r['szNama'] }}pt; line-height:{{ $LINE }}pt;">{{ $r['nama'] }}</td>
           <td style="font-size:{{ $r['szPnum'] }}pt; line-height:{{ $LINE }}pt;">{{ $r['pnum'] }}</td>
           <td class="c"></td>
@@ -178,7 +213,7 @@
         </tr>
       @endforeach
       <tr class="fill">
-        <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td style="height:{{ $pg['fill'] }}pt;"></td><td></td><td></td><td></td><td></td><td></td><td></td>
       </tr>
     </tbody>
   </table>
@@ -203,6 +238,9 @@
     <div class="cap">SUPPLIER</div>
     <table><tr><td class="h">PREPARED</td></tr><tr><td class="blank"></td></tr><tr><td class="foot"></td></tr></table>
   </div>
+
+</div>
+@endforeach
 
 </body>
 </html>

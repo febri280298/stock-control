@@ -248,6 +248,75 @@ class PoController extends Controller
         return response()->json(['message' => $message, 'id' => $item->id], 201);
     }
 
+    // PUT /po/{id}/items/{itemId}/add-qty -> tambah qty_order ke part yang udah ada di PO
+    // Boleh kapan aja (Open/Partial/Closed). Qty baru ini "ditempelin" diam-diam ke batch
+    // terakhir (gak muncul jadi Batch baru), biar total qty_order tetap sinkron sama batch.
+    // Sama kayak addItem(): kalau PO-nya udah Closed, approval direset dari awal.
+    public function addQty($id, $itemId, Request $request)
+    {
+        $po = Po::findOrFail($id);
+        $item = $po->items()->findOrFail($itemId);
+
+        $request->validate([
+            'qty'            => 'required|integer|min:1',
+            'as_new_batch'   => 'nullable|boolean',
+            'target_date'    => 'nullable|date',
+        ]);
+
+        $wasClosed = $po->status === 'closed';
+
+        $item->qty_order += $request->qty;
+
+        if ($request->boolean('as_new_batch')) {
+            // Jadiin batch baru yang keliatan terpisah (Batch 2, Batch 3, dst), boleh dikasih target tanggal.
+            $nextBatchNumber = ($item->batches()->max('batch_number') ?? 0) + 1;
+            PoItemBatch::create([
+                'po_item_id'   => $item->id,
+                'batch_number' => $nextBatchNumber,
+                'qty'          => $request->qty,
+                'target_date'  => $request->target_date,
+            ]);
+        } else {
+            // Default: nambah diam-diam ke batch terakhir, gak muncul jadi batch baru.
+            $lastBatch = $item->batches()->orderBy('batch_number', 'desc')->first();
+            if ($lastBatch) {
+                $lastBatch->qty += $request->qty;
+                $lastBatch->save();
+            } else {
+                PoItemBatch::create(['po_item_id' => $item->id, 'batch_number' => 1, 'qty' => $item->qty_order]);
+            }
+        }
+
+        $item->status = $item->qty_delivered >= $item->qty_order
+            ? 'closed'
+            : ($item->qty_delivered > 0 ? 'partial' : 'open');
+        $item->save();
+
+        if ($wasClosed) {
+            $po->approval_mkt1_by = null;
+            $po->approval_mkt1_at = null;
+            $po->approval_pcd_by  = null;
+            $po->approval_pcd_at  = null;
+            $po->approval_mkt2_by = null;
+            $po->approval_mkt2_at = null;
+            $po->save();
+        }
+
+        $po->refreshStatus();
+
+        $partNumber = $item->part->part_number ?? ('#' . $item->id);
+        $label = $wasClosed
+            ? "Tambah qty {$request->qty} pada part {$partNumber} di PO {$po->po_number} yang sudah Closed — approval direset dari awal."
+            : "Tambah qty {$request->qty} pada part {$partNumber} di PO {$po->po_number}";
+        ActivityLogger::log($request, 'update', 'Po', $po->id, $label);
+
+        $message = $wasClosed
+            ? 'Qty berhasil ditambahkan. PO ini sebelumnya Closed, approval sudah direset dari awal.'
+            : 'Qty berhasil ditambahkan';
+
+        return response()->json(['message' => $message, 'qty_order' => $item->qty_order]);
+    }
+
     // DELETE /po/{id}/items/{itemId} -> hapus part dari PO
     // Cuma boleh kalau PO belum closed DAN part-nya belum ada pengiriman sama sekali
     public function removeItem($id, $itemId, Request $request)
