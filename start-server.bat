@@ -5,7 +5,7 @@ REM  Double-click file ini untuk menyalakan server.
 REM  JANGAN pakai "php artisan serve" biasa (itu XAMPP PHP 8.2 -> error).
 REM ============================================================
 
-set "PHP_EXE=C:\Users\Bonecom tricom\Downloads\php-8.3.31-Win32-vs16-x64\php.exe"
+set "PHP_EXE=C:\Users\Bonecom tricom\Downloads\php-8.3.36-Win32-vs16-x64\php.exe"
 
 cd /d "%~dp0"
 
