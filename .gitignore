@@ -32,3 +32,7 @@ full.backup
 
 # Detail server untuk deploy.sh
 deploy.config
+
+# PHP portable yang ter-ekstrak ke dalam folder project (bukan bagian aplikasi)
+php8.3/
+php-8.*/
