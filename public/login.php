@@ -233,7 +233,7 @@
 
 <script>
   // Menyesuaikan sendiri dengan lokasi halaman ini:
-  //   lokal      http://10.177.220.93/login.php -> http://10.177.220.93/api
+  //   lokal      http://192.168.1.6/login.php -> http://192.168.1.6/api
   //   production https://daylistockproject.bonecomtricom.net/login.php -> .../api
   const API_URL = location.origin + location.pathname.replace(/\/[^/]*$/, '') + '/api';
 </script>
@@ -369,7 +369,7 @@
 
         <div class="footer-copyright">
           © 2026 PT Bonecom Tricom. All rights reserved.<br>
-          Control Stock-New Project v1.0.0
+          Control Stock-New Project v1.1.5
         </div>
 
       </div>

@@ -1,4 +1,4 @@
-import { createApp, ref, computed, onMounted, nextTick } from 'vue';
+import { createApp, ref, computed, watch, onMounted, nextTick } from 'vue';
 
 const API_URL = location.origin + location.pathname.replace(/\/[^/]*$/, '') + '/api';
 
@@ -109,8 +109,12 @@ createApp({
     const isAdmin = computed(() => currentUser.value?.role === 'admin');
     const isPcd = computed(() => currentUser.value?.role === 'pcd');
     const canManage = computed(() => isAdmin.value || isPcd.value);
+    const showAddPart = ref(false); // form Tambah Part Baru disembunyiin dulu, muncul pas tombol diklik
     const isMarketing = computed(() => currentUser.value?.role === 'marketing');
+    const canApproveQc = computed(() => isAdmin.value || isMarketing.value || isPcd.value);
     const canSeePrice = computed(() => isAdmin.value || isMarketing.value);
+    const canAddPart = computed(() => canManage.value || isMarketing.value);
+    const canViewSJ = computed(() => isAdmin.value || isPcd.value || isMarketing.value);
     const poBelumClose = computed(() => poList.value.filter(po => po.status !== 'closed'));
     const poBelumCloseCount = computed(() => poBelumClose.value.length);
     const poClosedCount = computed(() => poList.value.filter(po => po.status === 'closed').length);
@@ -122,6 +126,77 @@ createApp({
     const habisItems = computed(() => partsList.value.filter(p => p.stock === 0));
     const partModels = computed(() => [...new Set(partsList.value.map(p => p.model).filter(Boolean))].sort());
     const partCommodities = computed(() => [...new Set(partsList.value.map(p => p.commodity).filter(Boolean))].sort());
+
+    // ===== Diagram donat: sebaran per Model / per Commodity =====
+    const pieDim = ref('model');       // 'model' | 'commodity'
+    const pieMetric = ref('stock');    // 'stock' (total pcs) | 'parts' (jumlah part)
+    const pieHover = ref(null);
+    const PIE_COLORS = ['#06b6d4', '#8b5cf6', '#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#ec4899', '#14b8a6'];
+    const PIE_OTHER = '#94a3b8';
+    let pieChart = null; // sengaja bukan ref(), biar instance Chart.js gak dibungkus reactive Vue
+    const fmtPieNum = (n) => Number(n || 0).toLocaleString('id-ID');
+
+    // Semua grup (belum dipotong), urut dari terbesar. Part tanpa model/commodity masuk grup "Tanpa ...".
+    const pieGroups = computed(() => {
+      const dim = pieDim.value, metric = pieMetric.value;
+      const emptyLabel = dim === 'model' ? 'Tanpa Model' : 'Tanpa Commodity';
+      const map = new Map();
+      partsList.value.forEach(p => {
+        const key = String(p[dim] || '').trim() || emptyLabel;
+        const add = metric === 'parts' ? 1 : (parseInt(p.stock) || 0);
+        map.set(key, (map.get(key) || 0) + add);
+      });
+      return [...map.entries()].map(([label, value]) => ({ label, value })).filter(r => r.value > 0).sort((a, b) => b.value - a.value);
+    });
+    const pieTotal = computed(() => pieGroups.value.reduce((sum, r) => sum + r.value, 0));
+    // Yang ditampilin: 8 terbesar, sisanya digabung jadi "Lainnya".
+    const pieData = computed(() => {
+      let rows = pieGroups.value;
+      const MAX = 8;
+      if (rows.length > MAX + 1) {
+        const rest = rows.slice(MAX);
+        rows = [...rows.slice(0, MAX), { label: `Lainnya (${rest.length})`, value: rest.reduce((sum, r) => sum + r.value, 0), other: true }];
+      }
+      const total = pieTotal.value;
+      return rows.map((r, i) => ({ ...r, pct: total ? (r.value / total) * 100 : 0, color: r.other ? PIE_OTHER : PIE_COLORS[i % PIE_COLORS.length] }));
+    });
+    const pieCenter = computed(() => {
+      const r = pieHover.value !== null ? pieData.value[pieHover.value] : null;
+      if (r) return { value: fmtPieNum(r.value), label: r.label, sub: (r.pct < 1 ? '<1' : Math.round(r.pct)) + '% DARI TOTAL', color: r.color };
+      return { value: fmtPieNum(pieTotal.value), label: pieMetric.value === 'stock' ? 'TOTAL STOK (PCS)' : 'TOTAL PART', sub: '', color: null };
+    });
+    const pieStats = computed(() => {
+      const g = pieGroups.value, total = pieTotal.value;
+      if (!g.length) return { tracked: 0, topShare: '0%', largest: '-', avg: '0' };
+      return { tracked: g.length, topShare: Math.round((g[0].value / total) * 100) + '%', largest: g[0].label, avg: fmtPieNum(Math.round(total / g.length)) };
+    });
+
+    async function renderPie() {
+      await nextTick();
+      const canvas = document.getElementById('pieChart');
+      if (pieChart) { pieChart.destroy(); pieChart = null; }
+      if (!canvas || !pieData.value.length) return;
+      pieChart = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+          labels: pieData.value.map(r => r.label),
+          datasets: [{ data: pieData.value.map(r => r.value), backgroundColor: pieData.value.map(r => r.color), borderWidth: 0, spacing: 3, borderRadius: 4, hoverOffset: 8 }],
+        },
+        options: {
+          cutout: '68%', responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { enabled: false } },
+          onHover: (evt, els) => { pieHover.value = els.length ? els[0].index : null; },
+        },
+      });
+    }
+    function pieHighlight(i) {
+      pieHover.value = i;
+      if (!pieChart) return;
+      pieChart.setActiveElements(i === null ? [] : [{ datasetIndex: 0, index: i }]);
+      pieChart.update('none');
+    }
+    watch([pieData, page], () => { pieHover.value = null; if (page.value === 'dashboard') renderPie(); });
+
     const filteredParts = computed(() => {
       const s = partSearch.value.toLowerCase();
       const m = partModelFilter.value.toLowerCase();
@@ -227,7 +302,11 @@ createApp({
         const params = new URLSearchParams();
         if (historyFilter.value.type) params.append('type', historyFilter.value.type);
         if (historyFilter.value.search) params.append('search', historyFilter.value.search);
-        historyList.value = await apiFetch('/transactions?' + params.toString());
+        const data = await apiFetch('/transactions?' + params.toString());
+        // Transaksi Masuk yang masih "Before Check QC" (belum di-approve) naik ke paling atas.
+        // Yang lain tetap urut seperti aslinya (terbaru dulu). Begitu di-approve, otomatis turun ke posisi normal.
+        const isPendingQc = (h) => h.type === 'masuk' && h.status_qc === 'Before Check QC';
+        historyList.value = [...data].sort((a, b) => (isPendingQc(b) ? 1 : 0) - (isPendingQc(a) ? 1 : 0));
       } catch (err) { showToast('Gagal load history: ' + err.message, 'error'); }
     }
 
@@ -279,7 +358,7 @@ createApp({
       if (p === 'input' && !canManage.value) { showToast('Hanya admin yang bisa input transaksi!', 'error'); return; }
       if (p === 'po' && !isAdmin.value && !isMarketing.value && !isPcd.value) { showToast('Hanya admin/marketing/pcd yang bisa input PO!', 'error'); return; }
       if (p === 'auditlog' && !isAdmin.value) { showToast('Hanya admin yang bisa lihat audit trail!', 'error'); return; }
-      if (p === 'sjhistory' && !isAdmin.value && !isPcd.value) { showToast('Hanya admin/pcd yang bisa lihat history surat jalan!', 'error'); return; }
+      if (p === 'sjhistory' && !canViewSJ.value) { showToast('Kamu tidak punya akses ke history surat jalan!', 'error'); return; }
       page.value = p;
       window.scrollTo(0, 0);
       document.querySelector('.main')?.scrollTo(0, 0);
@@ -660,6 +739,19 @@ createApp({
 
     const poVisibleCount = ref(10);
     const poSearch = ref('');
+    // Badge notif di menu Rekap PO: hitung PO yang approval_stage-nya lagi nunggu giliran role user yang login.
+    const pendingApprovalCount = computed(() => {
+      if (!poList.value || !poList.value.length) return 0;
+      return poList.value.filter(po => {
+        const stage = po.approval_stage;
+        if (stage !== 'mkt1' && stage !== 'pcd' && stage !== 'mkt2') return false;
+        if (isAdmin.value) return true;
+        if (isMarketing.value) return stage === 'mkt1' || stage === 'mkt2';
+        if (isPcd.value) return stage === 'pcd';
+        return false;
+      }).length;
+    });
+
     const filteredPOList = computed(() => {
       const q = poSearch.value.trim().toLowerCase();
       const base = q ? poList.value.filter(po => (po.po_number || '').toLowerCase().includes(q)) : poList.value;
@@ -918,6 +1010,8 @@ createApp({
 
     const sjHistory = ref([]);
     const sjHistorySearch = ref('');
+    // Badge notif History Surat Jalan: jumlah SJ yang belum ditandai kembali (cuma admin/pcd yang bisa lihat daftar SJ).
+    const sjBelumKembaliCount = computed(() => (isAdmin.value || isPcd.value) ? sjHistory.value.filter(sj => !sj.returned_at).length : 0);
     const filteredSJHistory = computed(() => {
       const q = sjHistorySearch.value.trim().toLowerCase();
       if (!q) return sjHistory.value;
@@ -947,6 +1041,16 @@ createApp({
       } catch (err) { showToast(err.message, 'error'); }
     }
 
+    async function deleteSJ(sj) {
+      const label = sj.no_surat_jalan || ('#' + sj.id);
+      if (!confirm(`Hapus Surat Jalan ${label}?\n\nTransaksi barangnya TIDAK ikut terhapus, cuma catatan Surat Jalan-nya.`)) return;
+      try {
+      const res = await apiFetch('/surat-jalan/' + sj.id, { method: 'DELETE' });
+      showToast(res.message);
+      await loadSJHistory();
+      } catch (err) { showToast(err.message, 'error'); }
+    }
+
     async function previewSJ(id) {
       sjPreview.value = { show: true, url: '', loading: true };
       try {
@@ -961,6 +1065,64 @@ createApp({
         showToast(err.message, 'error');
         sjPreview.value = { show: false, url: '', loading: false };
       }
+    }
+
+    const sjEditModal = ref({ show: false, loading: false, sj: null, form: { no_surat_jalan: '', delivery_to: '', date: '', project: '' } });
+    function openSJEdit(sj) {
+      sjEditModal.value = {
+        show: true, loading: false, sj,
+        form: {
+          no_surat_jalan: sj.no_surat_jalan || '',
+          delivery_to: sj.delivery_to || '',
+          date: sj.date ? String(sj.date).slice(0, 10) : '',
+          project: sj.project || '',
+        },
+      };
+    }
+    async function submitSJEdit() {
+      const f = sjEditModal.value.form;
+      sjEditModal.value.loading = true;
+      try {
+        await apiFetch('/surat-jalan/' + sjEditModal.value.sj.id, {
+          method: 'PUT',
+          body: JSON.stringify({
+            no_surat_jalan: f.no_surat_jalan.trim() || null,
+            delivery_to: f.delivery_to.trim() || null,
+            date: f.date || null,
+            project: f.project.trim() || null,
+          }),
+        });
+        showToast('Data Surat Jalan berhasil diupdate!');
+        sjEditModal.value.show = false;
+        await loadSJHistory();
+      } catch (err) { showToast(err.message, 'error'); }
+      finally { sjEditModal.value.loading = false; }
+    }
+
+    const returnModal = ref({ show: false, loading: false, sj: null, date: '' });
+    function openReturnModal(sj) {
+      returnModal.value = { show: true, loading: false, sj, date: '' };
+    }
+    async function submitReturn() {
+      if (!returnModal.value.date) { showToast('Tanggal kembali wajib diisi!', 'error'); return; }
+      returnModal.value.loading = true;
+      try {
+        await apiFetch('/surat-jalan/' + returnModal.value.sj.id + '/returned', {
+          method: 'PUT', body: JSON.stringify({ returned_at: returnModal.value.date }),
+        });
+        showToast('Surat Jalan ditandai sudah kembali!');
+        returnModal.value.show = false;
+        await loadSJHistory();
+      } catch (err) { showToast(err.message, 'error'); }
+      finally { returnModal.value.loading = false; }
+    }
+    async function cancelReturn(sj) {
+      if (!confirm(`Batalkan penandaan "sudah kembali" untuk SJ ${sj.no_surat_jalan || ''}?`)) return;
+      try {
+        await apiFetch('/surat-jalan/' + sj.id + '/returned', { method: 'DELETE' });
+        showToast('Penandaan kembali dibatalkan');
+        await loadSJHistory();
+      } catch (err) { showToast(err.message, 'error'); }
     }
 
     function closeSJPreview() {
@@ -1001,6 +1163,7 @@ createApp({
         const a = document.createElement('a');
         a.href = url; a.download = 'surat-jalan-' + Date.now() + '.pdf'; a.click();
         URL.revokeObjectURL(url);
+        if (isAdmin.value || isPcd.value) loadSJHistory();
       } catch (err) { showToast(err.message, 'error'); }
     }
 
@@ -1031,10 +1194,12 @@ createApp({
           'Part Name': h.part_name,
           'Qty': h.qty_ok,
           'Status QC': h.status_qc || '-',
-          'Keterangan': h.type === 'masuk' ? (h.supplier || '-') : (h.tujuan || '-')
+          'Supplier/Customer': h.type === 'masuk' ? (h.supplier || '-') : (h.tujuan || '-'),
+          'Keterangan': h.keterangan || '-'
         }));
         const ws = XLSX.utils.json_to_sheet(data);
         ws['!cols'] = [{ wch: 12 }, { wch: 10 }, { wch: 20 }, { wch: 40 }, { wch: 8 }, { wch: 14 }, { wch: 22 }];
+        ws['!cols'] = [{ wch: 12 }, { wch: 10 }, { wch: 20 }, { wch: 40 }, { wch: 8 }, { wch: 14 }, { wch: 22 }, { wch: 28 }];
         const range = XLSX.utils.decode_range(ws['!ref']);
         for (let c = range.s.c; c <= range.e.c; c++) {
           const addr = XLSX.utils.encode_cell({ r: 0, c });
@@ -1129,9 +1294,30 @@ createApp({
     function exportExcelStok() {
       try {
         if (!partsList.value.length) { showToast('Data part kosong!', 'error'); return; }
-        const data = partsList.value.map(p => ({ 'Model': p.model || '-', 'Commodity': p.commodity, 'Part Name': p.part_name, 'Part Number': p.part_number, 'Supplier': p.supplier || '-', 'Sisa Stok': p.stock, 'Minimal Stok': p.min_stock, 'Reject': p.total_reject || 0, 'Status': p.stock === 0 ? 'HABIS' : p.stock <= p.min_stock ? 'KRITIS' : 'OK' }));
+        const withPrice = canSeePrice.value; // cuma admin & marketing
+        const data = partsList.value.map(p => {
+          const row = {
+            'Model': p.model || '-',
+            'Commodity': p.commodity,
+            'Part Name': p.part_name,
+            'Part Number': p.part_number,
+            'Supplier': p.supplier || '-',
+            'Sisa Stok': p.stock,
+            'Minimal Stok': p.min_stock,
+            'Reject': p.total_reject || 0,
+            'Status': p.stock === 0 ? 'HABIS' : p.stock <= p.min_stock ? 'KRITIS' : 'OK',
+          };
+          if (withPrice) {
+            row['Price Part'] = p.price ? parseFloat(p.price) : '-';
+            row['Periode Price'] = (p.price_valid_from && p.price_valid_until) ? formatDate(p.price_valid_from) + ' - ' + formatDate(p.price_valid_until) : '-';
+            row['Tarikan Sales'] = p.tarikan_sales ? parseFloat(p.tarikan_sales) : '-';
+          }
+          return row;
+        });
         const ws = XLSX.utils.json_to_sheet(data);
-        ws['!cols'] = [{ wch:10 },{ wch:20 },{ wch:45 },{ wch:20 },{ wch:12 },{ wch:14 },{ wch:10 }];
+        const cols = [{ wch:10 },{ wch:20 },{ wch:45 },{ wch:20 },{ wch:20 },{ wch:10 },{ wch:12 },{ wch:8 },{ wch:10 }];
+        if (withPrice) cols.push({ wch:14 }, { wch:26 }, { wch:14 });
+        ws['!cols'] = cols;
         const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Stok Part');
         XLSX.writeFile(wb, `rekap-stok-${new Date().toISOString().split('T')[0]}.xlsx`);
         showToast('Excel berhasil didownload!');
@@ -1149,22 +1335,22 @@ createApp({
       window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
     }
 
-    onMounted(() => { masuk.value.date = today(); keluar.value.date = today(); loadAll(); loadOpenPOList(); loadPOList(); });
+    onMounted(() => { masuk.value.date = today(); keluar.value.date = today(); loadAll(); loadOpenPOList(); loadPOList(); if (token.value && (isAdmin.value || isPcd.value)) loadSJHistory(); });
 
     return {
       token, currentUser, isDark, page, inputTab, partsList, historyList, toast,
       masuk, keluar, suggests, loadingMasuk, loadingKeluar,
       newPart, loadingNewPart, partSearch, partModelFilter, partCommodityFilter, historyFilter, partsColspan,
       auditFilter, activityLogs, loadingAuditLogs, loadActivityLogs, formatDateTime,
-      sjHistory, sjHistorySearch, filteredSJHistory, loadingSJHistory, loadSJHistory, downloadSJAgain, sjPreview, previewSJ, closeSJPreview,
+      sjHistory, sjHistorySearch, filteredSJHistory, sjBelumKembaliCount, loadingSJHistory, loadSJHistory, downloadSJAgain, deleteSJ, sjPreview, previewSJ, closeSJPreview, returnModal, openReturnModal, submitReturn, cancelReturn, sjEditModal, openSJEdit, submitSJEdit,
       loadingExportAudit, exportAuditExcel,
       priceModal, openPriceModal, submitPriceUpdate, editPartModal, openEditPartModal, submitEditPart, formatRupiah, formatDate,
       importPriceFileInput, loadingImportPrice, handleImportPriceExcel, downloadPriceTemplate,
       timeStr, dateStr, statBeforeQC, statAfterQC,
-      isAdmin, isMarketing, isPcd, canManage, canSeePrice, statOk, statCrit, statEmpty, statTotalReject, kritisItems, habisItems,
+      isAdmin, isMarketing, isPcd, canApproveQc, canManage, showAddPart, pieDim, pieMetric, pieData, pieHover, pieCenter, pieStats, pieHighlight, canSeePrice, canAddPart, canViewSJ, statOk, statCrit, statEmpty, statTotalReject, kritisItems, habisItems,
       poBelumClose, poBelumCloseCount, poClosedCount,
       partModels, partCommodities, filteredParts, pageTitle, greeting,
-      openPOList, poList, filteredPOList, visiblePOList, poVisibleCount, poSearch, onPOSearchInput, loadMorePO, poDetail, poDetailSearch, filteredPoDetailItems, loadingPO, newPO, poItemsForSelectedPO,
+      openPOList, poList, pendingApprovalCount, filteredPOList, visiblePOList, poVisibleCount, poSearch, onPOSearchInput, loadMorePO, poDetail, poDetailSearch, filteredPoDetailItems, loadingPO, newPO, poItemsForSelectedPO,
       keluarPoItemQuery, poItemSuggests, selectedPOItem, searchPOItemSuggest, selectPOItem,
       logout, toggleTheme, goPage, searchSuggest, selectPart, poSuggests, searchPOSuggest, selectPOPart,
       submitMasuk, submitKeluar, submitTambahPart,

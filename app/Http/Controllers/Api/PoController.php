@@ -7,6 +7,8 @@ use App\Models\Part;
 use App\Models\Po;
 use App\Models\PoItem;
 use App\Models\PoItemBatch;
+use App\Models\SuratJalan;
+use App\Models\Transaction;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -59,6 +61,14 @@ class PoController extends Controller
     {
         $po = Po::with('items.part', 'items.batches', 'approvalMkt1User', 'approvalPcdUser', 'approvalMkt2User')->findOrFail($id);
 
+        // Status Surat Jalan per item: transaksi Keluar yang ID-nya sudah tercatat di Surat Jalan manapun
+        // dianggap "sudah SJ", sisanya "sudah keluar tapi belum SJ".
+        $usedSjIds = SuratJalan::pluck('transaction_ids')->filter()->flatten()->map(fn ($v) => (int) $v)->all();
+        $keluarByItem = Transaction::whereIn('po_item_id', $po->items->pluck('id'))
+            ->where('type', 'keluar')
+            ->get(['id', 'po_item_id', 'qty'])
+            ->groupBy('po_item_id');
+
         return response()->json([
             'id'              => $po->id,
             'po_number'       => $po->po_number,
@@ -74,6 +84,8 @@ class PoController extends Controller
                 'qty_order'     => $it->qty_order,
                 'qty_delivered' => $it->qty_delivered,
                 'status'        => $it->status,
+                'sj_qty'        => (int) $keluarByItem->get($it->id, collect())->filter(fn ($t) => in_array((int) $t->id, $usedSjIds, true))->sum('qty'),
+                'belum_sj_qty'  => (int) $keluarByItem->get($it->id, collect())->reject(fn ($t) => in_array((int) $t->id, $usedSjIds, true))->sum('qty'),
                 'batches'       => $it->batches->map(fn ($b) => [
                     'id'            => $b->id,
                     'batch_number'  => $b->batch_number,

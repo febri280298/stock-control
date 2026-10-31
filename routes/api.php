@@ -25,11 +25,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/transactions', [TransactionController::class, 'index']);
     Route::get('/transactions/chart', [TransactionController::class, 'chart']);
     Route::post('/transactions', [TransactionController::class, 'store']);
-    Route::post('/transactions/{id}/approve-qc', [TransactionController::class, 'approveQc']);
     Route::post('/surat-jalan', [SuratJalanController::class, 'generate']);
 
+    // Approve QC: admin, marketing, pcd (role "user" biasa tidak boleh)
+    Route::middleware('role:admin,marketing,pcd')->group(function () {
+        Route::post('/transactions/{id}/approve-qc', [TransactionController::class, 'approveQc']);
+    });
+
     // Khusus admin & pcd -> kelola master data part (nambah, edit, hapus, import part baru)
-    Route::middleware('role:admin,pcd')->group(function () {
+    Route::middleware('role:admin,pcd,marketing')->group(function () {
         Route::post('/parts', [PartController::class, 'store']);
         Route::put('/parts/{id}', [PartController::class, 'update']);
         Route::delete('/parts/{id}', [PartController::class, 'destroy']);
@@ -62,9 +66,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/activity-logs/export', [ActivityLogController::class, 'export']);
     });
 
-    // Khusus admin & pcd -> lihat & download ulang history surat jalan
-    Route::middleware('role:admin,pcd')->group(function () {
+     // Admin, pcd & marketing -> cuma LIHAT history surat jalan (baca saja)
+    Route::middleware('role:admin,pcd,marketing')->group(function () {
         Route::get('/surat-jalan', [SuratJalanController::class, 'index']);
         Route::get('/surat-jalan/{id}/download', [SuratJalanController::class, 'download']);
+    });
+
+    // Khusus admin & pcd -> ubah data surat jalan
+    Route::middleware('role:admin,pcd')->group(function () {
+        Route::put('/surat-jalan/{id}', [SuratJalanController::class, 'update']);
+        Route::put('/surat-jalan/{id}/returned', [SuratJalanController::class, 'markReturned']);
+        Route::delete('/surat-jalan/{id}/returned', [SuratJalanController::class, 'unmarkReturned']);
+        Route::delete('/surat-jalan/{id}', [SuratJalanController::class, 'destroy']);
     });
 });

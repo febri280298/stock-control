@@ -111,16 +111,119 @@ class SuratJalanController extends Controller
                     'id'             => $sj->id,
                     'no_surat_jalan' => $sj->no_surat_jalan,
                     'delivery_to'    => $sj->delivery_to,
-                    'date'           => $sj->date,
+                    'date'           => $sj->date ? $sj->date->format('Y-m-d') : null,
                     'project'        => $sj->project,
                     'no_po'          => $sj->no_po,
                     'item_count'     => count($sj->transaction_ids ?? []),
                     'created_by'     => $sj->user->name ?? $sj->user_name ?? '-',
                     'created_at'     => $sj->created_at,
+                    'returned_at'    => $sj->returned_at ? $sj->returned_at->format('Y-m-d') : null,
+                    'returned_by'    => $sj->returned_by_name,
                 ];
             })
         );
     }
+
+    // PUT /surat-jalan/{id} -> edit data Surat Jalan (No. SJ, tujuan, tanggal, project).
+    // Cuma ngubah data di sistem; file PDF yang sudah pernah dicetak TIDAK ikut berubah.
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'no_surat_jalan' => 'nullable|string|max:100',
+            'delivery_to'    => 'nullable|string|max:255',
+            'date'           => 'nullable|date',
+            'project'        => 'nullable|string|max:255',
+        ]);
+
+        $sj = SuratJalan::findOrFail($id);
+
+        $snapshot = fn ($m) => [
+            'no_surat_jalan' => $m->no_surat_jalan,
+            'delivery_to'    => $m->delivery_to,
+            'date'           => $m->date ? $m->date->format('Y-m-d') : null,
+            'project'        => $m->project,
+        ];
+        $before = $snapshot($sj);
+
+        $sj->update($request->only(['no_surat_jalan', 'delivery_to', 'date', 'project']));
+        $sj->refresh();
+        $after = $snapshot($sj);
+
+        ActivityLogger::log(
+            $request, 'update', 'SuratJalan', $sj->id,
+            'Edit data Surat Jalan ' . ($after['no_surat_jalan'] ?: ('#' . $sj->id)),
+            ['before' => $before, 'after' => $after]
+        );
+
+        return response()->json(['message' => 'Surat Jalan berhasil diupdate']);
+    }
+
+    // PUT /surat-jalan/{id}/returned -> tandai Surat Jalan sudah kembali (tanggal dipilih manual)
+    public function markReturned(Request $request, $id)
+    {
+        $request->validate(['returned_at' => 'required|date']);
+
+        $sj = SuratJalan::findOrFail($id);
+        $sj->update([
+            'returned_at'      => $request->returned_at,
+            'returned_by'      => $request->user()->id,
+            'returned_by_name' => $request->user()->name ?? '-',
+        ]);
+
+        ActivityLogger::log(
+            $request, 'update', 'SuratJalan', $sj->id,
+            "Tandai Surat Jalan {$sj->no_surat_jalan} sudah kembali (tgl {$request->returned_at})"
+        );
+
+        return response()->json(['message' => 'Surat Jalan ditandai sudah kembali']);
+    }
+
+    // DELETE /surat-jalan/{id}/returned -> batalkan penandaan kembali (misal salah klik)
+    public function unmarkReturned(Request $request, $id)
+    {
+        $sj = SuratJalan::findOrFail($id);
+        $sj->update(['returned_at' => null, 'returned_by' => null, 'returned_by_name' => null]);
+
+        ActivityLogger::log(
+            $request, 'update', 'SuratJalan', $sj->id,
+            "Batalkan penandaan kembali Surat Jalan {$sj->no_surat_jalan}"
+        );
+
+        return response()->json(['message' => 'Penandaan kembali dibatalkan']);
+    }
+
+    // DELETE /surat-jalan/{id} -> hapus Surat Jalan (misal dobel). Transaksinya TIDAK ikut dihapus.
+// File PDF dipindah ke folder surat_jalan_deleted, bukan dihapus permanen.
+public function destroy(Request $request, $id)
+{
+    $sj = SuratJalan::findOrFail($id);
+    $label = $sj->no_surat_jalan ?: ('#' . $sj->id);
+
+    $snapshot = [
+        'no_surat_jalan'  => $sj->no_surat_jalan,
+        'delivery_to'     => $sj->delivery_to,
+        'date'            => $sj->date ? $sj->date->format('Y-m-d') : null,
+        'project'         => $sj->project,
+        'no_po'           => $sj->no_po,
+        'transaction_ids' => $sj->transaction_ids,
+        'file_path'       => $sj->file_path,
+        'returned_at'     => $sj->returned_at ? $sj->returned_at->format('Y-m-d') : null,
+    ];
+
+    if ($sj->file_path && Storage::disk('local')->exists($sj->file_path)) {
+        Storage::disk('local')->move($sj->file_path, 'surat_jalan_deleted/' . basename($sj->file_path));
+    }
+
+    $sj->delete();
+
+    ActivityLogger::log(
+        $request, 'delete', 'SuratJalan', $id,
+        "Menghapus Surat Jalan {$label} untuk " . ($snapshot['delivery_to'] ?: '-'),
+        ['before' => $snapshot]
+    );
+
+    return response()->json(['message' => 'Surat Jalan dihapus']);
+}
 
     // GET /surat-jalan/{id}/download -> download ulang PDF yang sudah pernah dibuat
     public function download($id)
